@@ -1,0 +1,801 @@
+<!-- पूरा कोड यहाँ से कॉपी करें -->
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>कक्षा 10 संस्कृत - अध्याय-वार क्विज़</title>
+<style>
+    /* --- क्विज़ की स्टाइलिंग (CSS) --- */
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&family=Noto+Sans+Devanagari:wght@400;500&display=swap');
+
+    .quiz-body { background: #f0f2f5; }
+    .quiz-container * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', 'Noto Sans Devanagari', sans-serif; }
+    .quiz-container { padding: 20px; min-height: 650px; position: relative; }
+
+    .start_screen, .quiz_box, .result_box {
+        position: absolute; top: 50%; left: 50%;
+        transform: translate(-50%, -50%);
+        box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.1), 0 6px 20px 0 rgba(0, 0, 0, 0.1);
+        border-radius: 5px; transition: all 0.3s ease;
+        width: 95%; max-width: 650px; background: #fff;
+    }
+
+    /* --- स्टार्ट स्क्रीन स्टाइल --- */
+    .start_screen { padding: 25px 30px; }
+    .start_screen h2, .start_screen h3 { text-align: center; margin-bottom: 20px; color: #333; }
+    .selection-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
+    .selection-btn, .back-btn { padding: 15px; font-size: 18px; font-weight: 500; border: 1px solid #007bff; border-radius: 5px; cursor: pointer; background: #fff; color: #007bff; text-align: center; transition: all 0.3s ease; }
+    .selection-btn:hover { background: #007bff; color: #fff; }
+    .back-btn { background: #6c757d; color: #fff; border-color: #6c757d; margin-top: 10px; }
+    .back-btn:hover { background: #5a6268; }
+
+    #part_selection_container { display: none; }
+    .settings_option { margin: 15px 0; display: flex; align-items: center; }
+    .settings_option label { font-size: 18px; margin-right: 10px; }
+    .settings_option input[type="checkbox"] { transform: scale(1.2); margin-right: 5px; }
+    .settings_option select { padding: 5px; font-size: 16px; }
+
+    /* --- बाकी की स्टाइलिंग --- */
+    .quiz_box.activeQuiz, .result_box.activeResult { opacity: 1; z-index: 5; pointer-events: auto; transform: translate(-50%, -50%) scale(1); }
+    .quiz_box, .result_box { opacity: 0; pointer-events: none; }
+    .quiz_box header { position: relative; height: 70px; padding: 0 20px; border-radius: 5px 5px 0 0; display: flex; align-items: center; justify-content: space-between; box-shadow: 0px 3px 5px 1px rgba(0,0,0,0.1); }
+    .quiz_box header .title { font-size: 18px; font-weight: 600; }
+    .quiz_box header .timer { display: flex; align-items: center; justify-content: space-between; width: 145px; height: 45px; background: #cce5ff; border: 1px solid #b8daff; border-radius: 5px; padding: 0 8px; }
+    .quiz_box header .timer .time_left_txt { font-weight: 400; font-size: 17px; user-select: none; }
+    .quiz_box header .timer .timer_sec { font-size: 18px; font-weight: 500; height: 30px; width: 45px; color: #fff; background: #343a40; border-radius: 5px; line-height: 30px; text-align: center; }
+    .quiz_box section { padding: 25px 30px 20px 30px; }
+    .quiz_box section .que_text { font-size: 22px; font-weight: 600; margin-bottom: 20px; }
+    .quiz_box section .option_list .option { background: aliceblue; border: 1px solid #84c5fe; border-radius: 5px; padding: 10px 15px; font-size: 17px; margin-bottom: 15px; cursor: pointer; transition: all 0.3s ease; }
+    .quiz_box section .option_list .option:hover:not(.disabled) { color: #004085; background: #cce5ff; }
+    .option_list .option.correct { color: #155724 !important; background: #d4edda !important; border-color: #c3e6cb !important; font-weight: 600; }
+    .option_list .option.incorrect { color: #721c24 !important; background: #f8d7da !important; border-color: #f5c6cb !important; }
+    .option_list .option.disabled { pointer-events: none; }
+    .feedback_text { margin-top: 20px; padding: 10px; border-radius: 5px; background-color: #e9ecef; font-size: 16px; display: none; }
+    .quiz_box footer { height: auto; min-height: 80px; padding: 15px 20px; display: flex; align-items: center; justify-content: space-between; border-top: 1px solid lightgrey; flex-wrap: wrap; }
+    .quiz_box footer .total_que { font-weight: 500; margin-bottom: 10px; flex-grow: 1; }
+    .quiz_box footer .buttons_group { display:flex; flex-wrap:wrap; justify-content: flex-end; }
+    .quiz_box footer .buttons_group button { padding: 8px 15px; font-size: 16px; margin: 5px; border-radius: 5px; cursor: pointer; }
+    .quiz_box footer .buttons_group .next_btn, .quiz_box footer .buttons_group .submit_btn { background: #007bff; color: #fff; border: 1px solid #007bff;}
+    .quiz_box footer .buttons_group .prev_btn, .quiz_box footer .buttons_group .skip_btn { background: #fff; color: #007bff; border: 1px solid #007bff; }
+    .quiz_box footer .buttons_group .back_to_results_btn { background: #28a745; color: #fff; border: 1px solid #28a745; }
+    .quiz_box footer .buttons_group button:disabled { cursor: not-allowed; opacity: 0.6; }
+    .result_box { padding: 25px 30px; align-items: center; flex-direction: column; display: none; }
+    .result_box.activeResult { display: flex; }
+    .result_box .icon img { width: 100px; margin-bottom: 10px; }
+    .result_box .complete_text { font-size: 20px; font-weight: 500; }
+    .result_box .score_text { margin: 15px 0; text-align: center; font-size: 18px; }
+    .result_box .score_text p { padding: 5px 0; }
+    .result_box .score_text span { font-weight: 600; color: #007bff; }
+    .result_box .buttons { display: flex; flex-wrap: wrap; justify-content: center; margin-top: 20px;}
+    .result_box .buttons button { padding: 10px 20px; font-size: 18px; margin: 5px; border-radius: 5px; cursor: pointer; }
+    button.restart_btn { background: #007bff; color: #fff; border: none; }
+    button.quit_btn { background: #fff; color: #007bff; border: 1px solid #007bff; }
+    button.review_btn { background: #6c757d; color: #fff; border: none; }
+</style>
+</head>
+<body class="quiz-body">
+    <div class="quiz-container">
+        
+        <div class="start_screen">
+            <div id="chapter_selection_container">
+                <h2>1. अध्याय चुनें</h2>
+                <div class="selection-grid" id="chapter_grid"></div>
+            </div>
+            <div id="part_selection_container">
+                <h2 id="part_selection_title">2. भाग चुनें</h2>
+                <div class="selection-grid" id="part_grid"></div>
+                <button class="back-btn">दूसरे अध्याय को चुनें</button>
+            </div>
+            <hr style="margin: 20px 0;">
+            <h3>सेटिंग्स</h3>
+             <div class="settings_option">
+                <input type="checkbox" id="autonext_checkbox" checked>
+                <label for="autonext_checkbox">स्वतः अगला प्रश्न</label>
+            </div>
+            <div class="settings_option">
+                <label for="time_select" style="display:inline-block;">समय सीमा:</label>
+                <select id="time_select" style="width:auto;">
+                    <option value="20" selected>20 सेकंड</option>
+                    <option value="30">30 सेकंड</option>
+                    <option value="45">45 सेकंड</option>
+                    <option value="0">कोई सीमा नहीं</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="quiz_box">
+            <header>
+                <div class="title">कक्षा 10 संस्कृत क्विज़</div>
+                <div class="timer">
+                    <div class="time_left_txt">शेष समय</div>
+                    <div class="timer_sec">20</div>
+                </div>
+            </header>
+            <section>
+                <div class="que_text"></div>
+                <div class="option_list"></div>
+                <div class="feedback_text"></div>
+            </section>
+            <footer>
+                <div class="total_que"></div>
+                <div class="buttons_group">
+                    <button class="prev_btn">पिछला</button>
+                    <button class="skip_btn">छोड़ें</button>
+                    <button class="next_btn">अगला</button>
+                    <button class="submit_btn">सबमिट करें</button>
+                    <button class="back_to_results_btn">परिणाम पर वापस जाएं</button>
+                </div>
+            </footer>
+        </div>
+
+        <div class="result_box">
+            <div class="icon"><img src="https://i.ibb.co/3YQ6Ff1/victory.png" alt="trophy"></div>
+            <div class="complete_text">क्विज़ पूरा हुआ!</div>
+            <div class="score_text"></div>
+            <div class="buttons">
+                <button class="restart_btn">दूसरा टेस्ट दें</button>
+                <button class="review_btn">गलत उत्तरों की समीक्षा करें</button>
+                <button class="quit_btn">बाहर निकलें</button>
+            </div>
+        </div>
+    </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // --- Element Selection ---
+    const start_screen = document.querySelector(".start_screen");
+    const quiz_box = document.querySelector(".quiz_box");
+    const result_box = document.querySelector(".result_box");
+    const chapter_selection_container = document.getElementById("chapter_selection_container");
+    const part_selection_container = document.getElementById("part_selection_container");
+    const chapter_grid = document.getElementById("chapter_grid");
+    const part_grid = document.getElementById("part_grid");
+    const part_selection_title = document.getElementById("part_selection_title");
+    const back_btn = document.querySelector(".back-btn");
+    
+    const que_text = document.querySelector(".que_text");
+    const option_list = document.querySelector(".option_list");
+    const feedback_text = document.querySelector(".feedback_text");
+    const total_que_footer = document.querySelector("footer .total_que");
+    const quiz_title_header = document.querySelector(".quiz_box header .title");
+    const timer_sec = document.querySelector(".timer_sec");
+    const timer_text = document.querySelector(".time_left_txt");
+    const prev_btn = document.querySelector(".prev_btn");
+    const next_btn = document.querySelector(".next_btn");
+    const skip_btn = document.querySelector(".skip_btn");
+    const submit_btn = document.querySelector(".submit_btn");
+    const back_to_results_btn = document.querySelector('.back_to_results_btn');
+    const restart_btn = document.querySelector(".result_box .restart_btn");
+    const review_btn = document.querySelector(".result_box .review_btn");
+    const quit_btn = document.querySelector(".result_box .quit_btn");
+    
+    // --- Settings Elements ---
+    const time_select = document.getElementById("time_select");
+    const autonext_checkbox = document.getElementById("autonext_checkbox");
+
+    // --- State Variables ---
+    let que_count = 0, review_count = 0;
+    let questions = [], originalQuestions = [], userAnswers = [], incorrectAnswersList = [];
+    let timeValue = 20;
+    let isAutoNextEnabled = true;
+    let isReviewMode = false;
+    let counter, autoNextTimeout;
+    let selectedChapterId = '';
+    
+    function initializeUI() {
+        chapter_grid.innerHTML = '';
+        Object.keys(allQuestions).forEach(chapterId => {
+            const button = document.createElement('button');
+            button.className = 'selection-btn';
+            button.dataset.id = chapterId;
+            button.textContent = allQuestions[chapterId].name;
+            button.onclick = () => selectChapter(chapterId);
+            chapter_grid.appendChild(button);
+        });
+        showChapterSelection();
+    }
+
+    function showChapterSelection() {
+        chapter_selection_container.style.display = 'block';
+        part_selection_container.style.display = 'none';
+        quiz_box.classList.remove("activeQuiz");
+        result_box.classList.remove("activeResult");
+        start_screen.style.display = 'block';
+    }
+
+    function selectChapter(chapterId) {
+        selectedChapterId = chapterId;
+        part_grid.innerHTML = '';
+        part_selection_title.textContent = `अध्याय: ${allQuestions[chapterId].name} (भाग चुनें)`;
+        
+        const parts = allQuestions[chapterId].parts;
+        Object.keys(parts).forEach(partId => {
+            const button = document.createElement('button');
+            button.className = 'selection-btn';
+            button.dataset.id = partId;
+            button.textContent = `भाग ${partId.replace('part', '')}`;
+            button.onclick = () => startSelectedQuiz(partId);
+            part_grid.appendChild(button);
+        });
+
+        chapter_selection_container.style.display = 'none';
+        part_selection_container.style.display = 'block';
+    }
+
+    back_btn.onclick = showChapterSelection;
+    
+    function startSelectedQuiz(partId) {
+        timeValue = parseInt(time_select.value);
+        isAutoNextEnabled = autonext_checkbox.checked;
+        questions = allQuestions[selectedChapterId].parts[partId];
+        const chapterName = allQuestions[selectedChapterId].name;
+        const partName = `भाग ${partId.replace('part', '')}`;
+        quiz_title_header.textContent = `${chapterName} - ${partName}`;
+        start_screen.style.display = 'none';
+        quiz_box.classList.add("activeQuiz");
+        startQuiz();
+    }
+    
+    function startQuiz() {
+        que_count = 0; review_count = 0; isReviewMode = false;
+        originalQuestions = [...questions];
+        userAnswers = new Array(originalQuestions.length).fill(undefined);
+        incorrectAnswersList = [];
+        showQuestions(que_count);
+    }
+    
+    function showQuestions(index) {
+        clearInterval(counter);
+        clearTimeout(autoNextTimeout);
+        const currentQuestion = originalQuestions[index];
+        
+        que_text.innerHTML = `<span>${currentQuestion.numb}. ${currentQuestion.question}</span>`;
+        let optionTag = '';
+        const shuffledOptions = [...currentQuestion.options].sort(() => Math.random() - 0.5);
+        shuffledOptions.forEach(option => { optionTag += `<div class="option"><span>${option}</span></div>`; });
+        option_list.innerHTML = optionTag;
+        
+        option_list.querySelectorAll(".option").forEach(option => { option.onclick = () => optionSelected(option); });
+        
+        updateFooter();
+        if (userAnswers[index]) {
+            showAnswerFeedback();
+        } else {
+            feedback_text.style.display = 'none';
+            if (timeValue > 0) startTimer(timeValue);
+            else timer_sec.textContent = "∞";
+        }
+        total_que_footer.innerHTML = `<span>प्रश्न ${index + 1} / ${originalQuestions.length}</span>`;
+    }
+
+    function startTimer(time) {
+        timer_text.textContent = "शेष समय";
+        counter = setInterval(() => {
+            time--;
+            timer_sec.textContent = time < 10 ? '0' + time : time;
+            if (time <= 0) {
+                clearInterval(counter);
+                timer_text.textContent = "समय समाप्त";
+                optionSelected(null);
+            }
+        }, 1000);
+    }
+    
+    function optionSelected(selectedOption) {
+        clearInterval(counter);
+        const currentQuestion = originalQuestions[que_count];
+        
+        if (selectedOption) {
+            const userAnswerText = selectedOption.querySelector('span').textContent;
+            userAnswers[que_count] = { question: currentQuestion, selected: userAnswerText, correct: userAnswerText === currentQuestion.answer };
+        } else {
+            userAnswers[que_count] = { question: currentQuestion, selected: "समय समाप्त", correct: false };
+        }
+        
+        showAnswerFeedback();
+        if (isAutoNextEnabled && !isReviewMode) {
+            autoNextTimeout = setTimeout(goToNextQuestion, 2000);
+        }
+    }
+
+    function showAnswerFeedback() {
+        const answerData = userAnswers[que_count];
+        const allOptions = option_list.querySelectorAll(".option");
+        allOptions.forEach(option => {
+            option.classList.add('disabled');
+            let optionText = option.querySelector('span').textContent;
+            if (optionText === answerData.question.answer) option.classList.add('correct');
+            else if (optionText === answerData.selected) option.classList.add('incorrect');
+        });
+        feedback_text.innerHTML = `<b>फीडबैक:</b> ${answerData.question.feedback}`;
+        feedback_text.style.display = 'block';
+        updateFooter();
+    }
+    
+    function updateFooter() {
+        [prev_btn, next_btn, skip_btn, submit_btn, back_to_results_btn].forEach(btn => btn.style.display = 'none');
+
+        if (isReviewMode) {
+            back_to_results_btn.style.display = 'inline-block';
+            if (incorrectAnswersList.length > 1) {
+                prev_btn.style.display = 'inline-block';
+                next_btn.style.display = 'inline-block';
+                prev_btn.disabled = review_count === 0;
+                next_btn.disabled = review_count === incorrectAnswersList.length - 1;
+            }
+        } else {
+            submit_btn.style.display = 'inline-block';
+            if (que_count > 0) prev_btn.style.display = 'inline-block';
+
+            if (!userAnswers[que_count]) {
+                skip_btn.style.display = 'inline-block';
+            }
+            if (!isAutoNextEnabled && que_count < originalQuestions.length - 1) {
+                next_btn.style.display = 'inline-block';
+                next_btn.disabled = !userAnswers[que_count];
+            }
+        }
+    }
+    
+    function showResult() {
+        quiz_box.classList.remove("activeQuiz");
+        result_box.classList.add("activeResult");
+        const correctAnswers = userAnswers.filter(a => a && a.correct).length;
+        const incorrectAnswers = userAnswers.filter(a => a && !a.correct && a.selected !== "समय समाप्त").length;
+        const unanswered = userAnswers.filter(a => a === undefined).length;
+        const timeOuts = userAnswers.filter(a => a && a.selected === "समय समाप्त").length;
+
+        result_box.querySelector(".score_text").innerHTML = `<p>कुल प्रश्न: <span>${originalQuestions.length}</span></p>
+            <p>सही उत्तर: <span style="color: green;">${correctAnswers}</span></p>
+            <p>गलत उत्तर: <span style="color: red;">${incorrectAnswers}</span></p>
+            <p>छोड़े गए / समय समाप्त: <span style="color: grey;">${timeOuts + unanswered}</span></p>`;
+        
+        incorrectAnswersList = userAnswers.filter(a => a && !a.correct);
+        review_btn.style.display = incorrectAnswersList.length > 0 ? 'inline-block' : 'none';
+    }
+
+    function goToNextQuestion() {
+        if (que_count < originalQuestions.length - 1) {
+            que_count++;
+            showQuestions(que_count);
+        } else {
+            showResult();
+        }
+    }
+
+    // --- Button Click Handlers ---
+    next_btn.onclick = () => { if(!isReviewMode) goToNextQuestion(); };
+    prev_btn.onclick = () => { if (!isReviewMode && que_count > 0) { que_count--; showQuestions(que_count); } };
+    skip_btn.onclick = () => {
+        userAnswers[que_count] = { question: originalQuestions[que_count], selected: "समय समाप्त", correct: false };
+        goToNextQuestion();
+    };
+    submit_btn.onclick = () => {
+        const unansweredCount = userAnswers.filter(a => a === undefined).length;
+        let confirmation = true;
+        if (que_count < originalQuestions.length - 1) {
+             confirmation = confirm(`आप सच में टेस्ट सबमिट करना चाहते हैं? अभी भी प्रश्न बाकी हैं।`);
+        }
+        if(confirmation) showResult();
+    };
+    restart_btn.onclick = initializeUI;
+    quit_btn.onclick = () => window.close();
+
+    review_btn.onclick = () => {
+        isReviewMode = true;
+        review_count = 0;
+        result_box.classList.remove("activeResult");
+        quiz_box.classList.add("activeQuiz");
+        showReviewQuestion(review_count);
+    };
+
+    back_to_results_btn.onclick = () => {
+        isReviewMode = false;
+        // Restore normal quiz button event listeners
+        prev_btn.onclick = () => { if (!isReviewMode && que_count > 0) { que_count--; showQuestions(que_count); } };
+        next_btn.onclick = () => { if(!isReviewMode) goToNextQuestion(); };
+        quiz_box.classList.remove("activeQuiz");
+        result_box.classList.add("activeResult");
+    };
+
+    function showReviewQuestion(index) {
+        clearInterval(counter);
+        timer_sec.textContent = "∞";
+        timer_text.textContent = "समीक्षा";
+        const reviewData = incorrectAnswersList[index];
+        const currentQuestion = reviewData.question;
+        que_text.innerHTML = `<span>${currentQuestion.numb}. ${currentQuestion.question}</span>`;
+        let optionTag = '';
+        currentQuestion.options.forEach(option => { optionTag += `<div class="option"><span>${option}</span></div>`; });
+        option_list.innerHTML = optionTag;
+        
+        option_list.querySelectorAll(".option").forEach(option => {
+            option.classList.add('disabled');
+            let optionText = option.querySelector('span').textContent;
+            if (optionText === currentQuestion.answer) option.classList.add('correct');
+            if (optionText === reviewData.selected) option.classList.add('incorrect');
+        });
+        
+        feedback_text.innerHTML = `<b>फीडबैक:</b> ${reviewData.question.feedback}`;
+        feedback_text.style.display = 'block';
+        total_que_footer.innerHTML = `<span>समीक्षा प्रश्न ${index + 1} / ${incorrectAnswersList.length}</span>`;
+        updateFooter();
+        // Override default prev/next for review navigation
+        prev_btn.onclick = () => showReviewQuestion(index - 1);
+        next_btn.onclick = () => showReviewQuestion(index + 1);
+    }
+    
+    // =======================================================
+    // --- सभी प्रश्नों का डेटाबेस ---
+    // =======================================================
+    const allQuestions = {
+        "sanskritLekhika": {
+            name: "संस्कृतसाहित्ये लेखिकाः",
+            parts: {
+                "part1": [
+                    {numb: 2, question: "वैदिक युग में किस प्रकार के ऋषि होते थे?", answer: "पुरुष और महिला दोनों", options: ["केवल पुरुष ऋषि", "केवल महिला ऋषि", "पुरुष और महिला दोनों", "केवल युवा ऋषि"], feedback: "वैदिक युग में मंत्रों के द्रष्टा न केवल ऋषि, अपितु ऋषिकाएँ भी थीं।"},
+                    {numb: 3, question: "ऋग्वेद में कितनी ऋषिकाओं का उल्लेख किया गया है?", answer: "24", options: ["12", "24", "36", "5"], feedback: "ऋग्वेद में चौबीस (चतुर्विंशति) ऋषिकाओं का उल्लेख मिलता है।"},
+                    {numb: 4, question: "अथर्ववेद में कितनी ऋषिकाएँ उल्लिखित हैं?", answer: "5", options: ["3", "5", "7", "10"], feedback: "अथर्ववेद में पाँच ऋषिकाओं का उल्लेख है - यमी, अपाला, उर्वशी, इन्द्राणी और वागाम्भृणी।"},
+                    {numb: 5, question: "वृहदारण्यकोपनिषद् में किसकी दार्शनिक रुचि का उल्लेख है?", answer: "मैत्रेयी", options: ["याज्ञवल्क्य", "मैत्रेयी", "गार्गी", "इन्द्राणी"], feedback: "वृहदारण्यकोपनिषद् में याज्ञवल्क्य की पत्नी मैत्रेयी की दार्शनिक रुचि का वर्णन है।"},
+                    {numb: 6, question: "जनक की सभा में शास्त्रार्थ कुशल किसे माना गया है?", answer: "गार्गी", options: ["मैत्रेयी", "अपाला", "गार्गी", "यमी"], feedback: "राजा जनक की सभा में गार्गी वाचक्नवी नामक शास्त्रार्थ कुशल विदुषी रहती थीं।"},
+                    {numb: 7, question: "‘मधुराविजयम्’ किसकी रचना है?", answer: "गंगादेवी", options: ["गंगादेवी", "तिरुमलाम्बा", "विजयाङ्का", "शीलाभट्टारिका"], feedback: "14वीं शताब्दी में कम्पण राय की रानी गंगादेवी ने अपने पति की मदुरै विजय पर 'मधुराविजयम्' महाकाव्य की रचना की।"},
+                    {numb: 8, question: "अच्युतराय की रानी ने कौन-सा संस्कृत काव्य रचा?", answer: "वरदाम्बिकापरिणय", options: ["मधुराविजयम्", "शंकरचरितम्", "वरदाम्बिकापरिणय", "रामभद्राम्बा"], feedback: "16वीं शताब्दी में अच्युतराय की रानी तिरुमलाम्बा ने 'वरदाम्बिकापरिणय' नामक चम्पूकाव्य की रचना की।"},
+                    {numb: 9, question: "‘वरदाम्बिकापरिणय’ किसने लिखा?", answer: "तिरुमलाम्बा", options: ["गंगादेवी", "तिरुमलाम्बा", "विजयाङ्का", "वनमाला भवालकर"], feedback: "'वरदाम्बिकापरिणय' की रचना अच्युतराय की रानी तिरुमलाम्बा ने की थी।"},
+                    {numb: 10, question: "संस्कृत साहित्य में दीर्घतम समस्त पद का प्रयोग किस काव्य में हुआ है?", answer: "वरदाम्बिकापरिणय", options: ["मधुराविजयम्", "वरदाम्बिकापरिणय", "शंकरचरितम्", "ग्रामज्योति"], feedback: "'वरदाम्बिकापरिणय' में लंबे-लंबे समस्त पदों का बहुत सुंदर प्रयोग मिलता है।"},
+                    {numb: 11, question: "आधुनिक काल की कौन-सी लेखिका संस्कृत साहित्य में प्रसिद्ध है?", answer: "पण्डिता क्षमाराव", options: ["गार्गी", "पण्डिता क्षमाराव", "अपाला", "विजयाङ्का"], feedback: "आधुनिक काल (1890-1953) में पण्डिता क्षमाराव संस्कृत की एक अत्यंत प्रसिद्ध लेखिका थीं।"},
+                    {numb: 12, question: "पण्डिता क्षमाराव ने किसकी जीवनी पर 'शंकरचरितम्' की रचना की?", answer: "अपने पिता शंकर पाण्डुरंग", options: ["महात्मा गाँधी", "आदि शंकराचार्य", "अपने पिता शंकर पाण्डुरंग", "स्वामी विवेकानंद"], feedback: "उन्होंने अपने पिता, जो एक महान विद्वान थे, शंकर पाण्डुरंग पण्डित के जीवन-चरित्र पर 'शंकरचरितम्' लिखा।"},
+                    {numb: 13, question: "गांधी दर्शन से प्रभावित होकर पण्डिता क्षमाराव ने कौन-सी पुस्तक लिखी?", answer: "सत्याग्रहगीता", options: ["मीरालहरी", "कथापंचकम्", "ग्रामज्योति", "सत्याग्रहगीता"], feedback: "महात्मा गाँधी के दर्शन से प्रभावित होकर उन्होंने सत्याग्रहगीता, मीरालहरी, कथामुक्तावली, विचित्रपरिषद्यात्रा, ग्रामज्योति इत्यादि ग्रंथों की रचना की।"},
+                    {numb: 14, "question": "लौकिक संस्कृत साहित्य की कवयित्रियों में प्रथम कल्पा कौन हैं?", "answer": "विजयाङ्का", "options": ["गंगादेवी", "तिरुमलाम्बा", "विजयाङ्का", "शीलाभट्टारिका"], "feedback": "लौकिक संस्कृत में विजयाङ्का को प्रथम कल्पा (सबसे श्रेष्ठ) माना गया है।"},
+                    {numb: 15, "question": "दक्षिण भारत की कौन-सी लेखिका संस्कृत साहित्य में प्रसिद्ध है?", "answer": "उपरोक्त सभी", "options": ["शीलाभट्टारिका", "देवकुमारिका", "रामभद्राम्बा", "उपरोक्त सभी"], "feedback": "दक्षिण भारत में शीलाभट्टारिका, देवकुमारिका, रामभद्राम्बा जैसी अनेक लेखिकाएँ अपने स्फुट पद्यों के लिए प्रसिद्ध थीं।"}
+                ],
+                "part2": [
+                    {numb: 16, "question": "‘शंकरचरितम्’ की रचना किसने की?", "answer": "पण्डिता क्षमाराव", "options": ["गार्गी", "पण्डिता क्षमाराव", "विजयाङ्का", "इन्द्राणी"], "feedback": "यह प्रश्न दोहराया गया है। 'शंकरचरितम्' पण्डिता क्षमाराव की रचना है।"},
+                    {numb: 17, "question": "विजयाङ्का का समय क्या माना जाता है?", "answer": "8वीं शताब्दी", "options": ["वैदिक काल", "8वीं शताब्दी", "16वीं शताब्दी", "आधुनिक काल"], "feedback": "विजयाङ्का का समय आठवीं शताब्दी अनुमानित किया जाता है।"},
+                    {numb: 18, "question": "समाज रूपी गाड़ी कैसे चलती है?", "answer": "पुरुष और नारी दोनों से", "options": ["केवल पुरुषों से", "केवल नारियों से", "पुरुष और नारी दोनों से", "राजा से"], "feedback": "पाठ के अनुसार, समाज रूपी गाड़ी को चलाने में पुरुषों और नारियों, दोनों का समान महत्व है।"},
+                    {numb: 19, "question": "याज्ञवल्क्य ने अपनी पत्नी को किसकी शिक्षा दी?", "answer": "आत्मतत्व की", "options": ["राजनीति की", "धर्म की", "आत्मतत्व की", "न्याय की"], "feedback": "याज्ञवल्क्य ने अपनी पत्नी मैत्रेयी को आत्मतत्व (आत्मा के ज्ञान) की शिक्षा दी थी।"},
+                    {numb: 20, "question": "‘मधुराविजयम्’ किस काल की रचना है?", "answer": "14वीं शताब्दी", "options": ["वैदिक काल", "14वीं शताब्दी", "16वीं शताब्दी", "आधुनिक काल"], "feedback": "गंगादेवी ने 14वीं शताब्दी में 'मधुराविजयम्' की रचना की थी।"},
+                    {numb: 21, "question": "महाभारत में भी किस लेखिका का उल्लेख मिलता है?", "answer": "सुलभा", "options": ["गार्गी", "मैत्रेयी", "सुलभा", "अपाला"], "feedback": "महाभारत में भी सुलभा का वर्णन मिलता है जो दार्शनिक विचारों वाली थीं।"},
+                    {numb: 22, "question": "पण्डिता क्षमाराव के पिता कौन थे?", "answer": "शंकर पाण्डुरंग पण्डित", "options": ["दयानन्द सरस्वती", "महात्मा गाँधी", "शंकर पाण्डुरंग पण्डित", "अच्युतराय"], "feedback": "पण्डिता क्षमाराव के पिता महान विद्वान शंकर पाण्डुरंग पण्डित थे।"},
+                    {numb: 23, "question": "विजयाङ्का किस वर्ण की थीं?", "answer": "श्याम वर्ण", "options": ["गौर वर्ण", "श्याम वर्ण", "गेहुँआ वर्ण", "अज्ञात"], "feedback": "पदों से ज्ञात होता है कि विजयाङ्का श्याम वर्ण की थीं।"},
+                    {numb: 24, "question": "वर्तमान काल में संस्कृत की रचना में कौन-कौन लगी हुई हैं?", "answer": "उपरोक्त सभी", "options": ["पुष्पा दीक्षित", "वनमाला भवालकर", "मिथिलेश कुमारी मिश्र", "उपरोक्त सभी"], "feedback": "वर्तमान समय में पुष्पा दीक्षित, वनमाला भवालकर, मिथिलेश कुमारी मिश्र जैसी लेखिकाएँ संस्कृत साहित्य को समृद्ध कर रही हैं।"},
+                    {numb: 25, "question": "विजयनगर साम्राज्य के राजाओं ने किस भाषा को बढ़ावा दिया?", "answer": "संस्कृत", "options": ["तमिल", "तेलुगु", "कन्नड़", "संस्कृत"], "feedback": "विजयनगर के राजाओं ने संस्कृत भाषा और साहित्य के संरक्षण के लिए बहुत प्रयास किए।"},
+                    {numb: 26, "question": "विजयनगर के किस राजा की रानी गंगादेवी थी?", "answer": "कम्પણ राय", "options": ["कृष्णदेवराय", "अच्युतराय", "कम्પણ राय", "चंद्रादित्य"], "feedback": "गंगादेवी विजयनगर के राजा कम्पण राय (14वीं शताब्दी) की रानी थीं।"},
+                    {numb: 27, "question": "किस रानी ने ‘मधुराविजयम्’ की रचना की?", "answer": "गंगादेवी", "options": ["तिरुमलाम्बा", "विजयाङ्का", "गंगादेवी", "अपाला"], "feedback": "यह प्रश्न दोहराया गया है। 'मधुराविजयम्' की रचना गंगादेवी ने की थी।"},
+                    {numb: 28, "question": "‘मधुराविजयम्’ का अर्थ क्या है?", "answer": "मदुरै की विजय", "options": ["मधुरा का इतिहास", "मदुरै की विजय", "मधुरा का काव्य", "मधुरा का नाटक"], "feedback": "यह महाकाव्य कम्पण राय की मदुरै (जिसे पहले मधुरा कहा जाता था) पर विजय की कहानी कहता है।"},
+                    {numb: 29, "question": "‘वरदाम्बिकापरिणय’ का कथानक किस पर आधारित है?", "answer": "वरदाम्बिका के परिणय पर", "options": ["पाण्ड्य राजा की विजय", "संस्कृत साहित्य के नायक पर", "राम और सीता के विवाह पर", "वरदाम्बिका के परिणय पर"], "feedback": "जैसा कि नाम से स्पष्ट है, यह काव्य वरदाम्बिका के परिणय (विवाह) पर आधारित एक चम्पूकाव्य है।"},
+                    {numb: 30, "question": "चंद्रादित्य की रानी कौन थी?", "answer": "विजयभट्टारिका", "options": ["गंगादेवी", "तिरुमलाम्बा", "विजयाङ्का", "विजयभट्टारिका"], "feedback": "चालुक्य वंश के राजा चंद्रादित्य की रानी विजयभट्टारिका को ही कई लोग विजयाङ्का मानते हैं।"}
+                ]
+            }
+        },
+        "bharatmahima": {
+            name: "भारतमहिमा",
+            parts: {
+                "part1": [
+                    {numb: 1, question: "देवता लोग किस देश की महिमा का गुणगान करते हैं?", answer: "भारतवर्ष", options: ["आर्यावर्त", "भारतवर्ष", "गंधार", "अवंती"], feedback: "पाठ के अनुसार, देवता भी उस भारत देश का गुणगान करते हैं जहाँ जन्म लेना सौभाग्य की बात है।"},
+                    {numb: 2, question: "विष्णुपुराण और भागवतपुराण में किसके बारे में बताया गया है?", answer: "भारत की महिमा", options: ["भारत की प्रकृति", "भारत की महिमा", "रामायण का वर्णन", "धार्मिक पूजा पद्धति"], feedback: "इस पाठ में प्रथम और द्वितीय पद्य क्रमशः विष्णुपुराण और भागवतपुराण से लिए गए हैं, जिनमें भारत की महिमा का गान है।"},
+                    {numb: 3, question: "किस पुराण से ‘अहो अमीषां किमकारि शोभनं’ श्लोक लिया गया है?", answer: "भागवतपुराण", options: ["शिवपुराण", "भागवतपुराण", "विष्णुपुराण", "मत्स्यपुराण"], feedback: "यह श्लोक भागवतपुराण से लिया गया है जिसमें देवता भारत में जन्म लेने वालों की प्रशंसा करते हैं।"},
+                    {numb: 4, question: "कौन-सी भूमि ‘स्वर्ग और मोक्ष प्रदान करने योग्य’ मानी जाती है?", answer: "भारतवर्ष", options: ["कश्मीर", "भारतवर्ष", "हरियाणा", "राजस्थान"], feedback: "भारत भूमि को स्वर्ग और मोक्ष प्रदान करने वाली साधन-स्वरूपा भूमि कहा गया है।"},
+                    {numb: 5, question: "‘इयं निर्मला वत्सला मातृभूमिः’ का अनुवाद क्या है?", answer: "यह भूमि सदैव स्वच्छ और ममतामयी है।", options: ["यह भूमि बंजर और कठोर है।", "यह भूमि सदैव स्वच्छ और ममतामयी है।", "यह भूमि वीरों की भूमि है।", "यह भूमि केवल पर्वतों की है।"], feedback: "इसका अर्थ है - यह हमारी मातृभूमि निर्मल (स्वच्छ) और वत्सला (ममतामयी) है।"},
+                    {numb: 6, question: "‘गायन्ति देवाः किल गीतकानि’ का क्या अर्थ है?", answer: "देवता गीत गाते हैं", options: ["देवता गीत नहीं गाते", "देवता नृत्य करते हैं", "देवता गीत गाते हैं", "देवता मंत्र पढ़ते हैं"], feedback: "इस पंक्ति का अर्थ है - देवता भी निश्चित रूप से (भारत के) गीत गाते हैं।"},
+                    {numb: 7, question: "‘भवन्ति भूयः पुरुषाः सुरत्वात्’ का अर्थ क्या है?", answer: "पुरुष देवता के समान होते हैं", options: ["पुरुष गरीब होते हैं", "पुरुष शक्तिशाली होते हैं", "पुरुष देवता के समान होते हैं", "पुरुष कमजोर होते हैं"], feedback: "इसका अर्थ है कि भारत में जन्म लेने वाले मनुष्य देवत्व को प्राप्त करते हैं, अर्थात देवता के समान होते हैं।"},
+                    {numb: 8, question: "‘विशालास्मदीया धरा भारतीया’ का अर्थ क्या है?", answer: "भारत का क्षेत्रफल विशाल है", options: ["भारत का क्षेत्रफल छोटा है", "भारत का क्षेत्रफल विशाल है", "भारत का क्षेत्रफल उबड़-खाबड़ है", "भारत का क्षेत्रफल सीमित है"], feedback: "इसका अर्थ है - हमारी भारतीय भूमि (धरा) विशाल है।"},
+                    {numb: 9, question: "‘मुकुन्दसेवौपयिकं स्पृहा हि नः’ का भावार्थ क्या है?", answer: "मुझे हरि की सेवा करने की इच्छा है", options: ["मुझे राजा की सेवा करनी है", "मुझे हरि की सेवा करने की इच्छा है", "मुझे आराम करना है", "मुझे यात्रा करनी है"], feedback: "देवता कहते हैं कि हमारी इच्छा है कि हम भी भारत में जन्म लेकर भगवान श्रीहरि (मुकुन्द) की सेवा के योग्य बनें।"},
+                    {numb: 10, question: "देवता भारत भूमि के बारे में क्या कहते हैं?", answer: "यह भूमि स्वर्ग जैसी है", options: ["यह भूमि अमूल्य है", "यह भूमि बंजर है", "यह भूमि स्वर्ग जैसी है", "यह भूमि साधारण है"], feedback: "देवता भारत भूमि को स्वर्ग के समान मानते हैं और यहाँ जन्म लेने की इच्छा रखते हैं।"},
+                    {numb: 11, question: "भारत की प्राकृतिक संपदा में क्या सम्मिलित है?", answer: "पर्वत, नदियाँ, वन", options: ["केवल रेगिस्तान", "पर्वत, नदियाँ, वन", "सिर्फ नदियाँ", "केवल वन"], feedback: "पाठ के अनुसार, भारत भूमि वनों, पर्वतों, झरनों और बहती हुई नदियों से हमेशा सुशोभित है।"},
+                    {numb: 12, question: "‘सदास्माभिरेतत्तथा पूजनीयम्’ का क्या अर्थ है?", answer: "यह हमेशा पूजनीय है", options: ["यह हमेशा पूजनीय नहीं है", "यह हमेशा पूजनीय है", "इसे कभी पूजा नहीं गया", "इसे केवल एक बार पूजा गया"], feedback: "इसका अर्थ है - यह (भारत भूमि) हमारे द्वारा हमेशा पूजनीय है।"},
+                    {numb: 13, question: "‘भवेद् देशभक्तिः समेषां जनानां’ का क्या अर्थ है?", answer: "देशभक्ति सभी के लिए जरूरी है", options: ["देशभक्ति अनिवार्य नहीं है", "देशभक्ति सभी के लिए जरूरी है", "देशभक्ति केवल राजाओं के लिए है", "देशभक्ति केवल पुरोहितों के लिए है"], feedback: "इसका अर्थ है - हम सभी लोगों में देशभक्ति की भावना होनी चाहिए।"},
+                                        {numb: 14, question: "देवता किस प्रकार के लोगों को धन्य मानते हैं?", answer: "जो भारत में जन्म लेते हैं", options: ["जो स्वर्ग में जन्म लेते हैं", "जो भारत में जन्म लेते हैं", "जो नरक में जन्म लेते हैं", "जो विदेश में जन्म लेते हैं"], feedback: "श्लोक 'धन्यास्तु ते भारतभूमिभागे' के अनुसार, वे लोग धन्य हैं जो भारत भूमि पर जन्म लेते हैं।"},
+                    {numb: 15, question: "‘स्वर्गापवर्गास्पदमार्गभूते’ का क्या अर्थ है?", answer: "स्वर्ग और मोक्ष का मार्ग", options: ["नरक का मार्ग", "स्वर्ग और मोक्ष का मार्ग", "युद्ध का मार्ग", "तप का मार्ग"], feedback: "इसका अर्थ है - यह भूमि स्वर्ग और मोक्ष प्रदान करने वाली साधन-स्वरूपा है।"}
+                ],
+                "part2": [
+                    {numb: 16, question: "‘धन्यास्तु ते भारतभूमिभागे’ में ‘धन्य’ किसके लिए कहा गया है?", answer: "भारत में जन्म लेने वालों के लिए", options: ["विदेशियों के लिए", "भारत में जन्म लेने वालों के लिए", "पशुओं के लिए", "पेड़ों के लिए"], feedback: "यह पंक्ति उन लोगों को धन्य कहती है जो भारत भूमि के किसी भी भाग में जन्म लेते हैं।"},
+                    {numb: 17, question: "भारत की भूमि को ‘स्वर्ग और मोक्ष का साधन’ क्यों कहा गया है?", answer: "यहाँ भगवान की सेवा का अवसर है", options: ["यहाँ स्वर्ग का वास है", "यहाँ भगवान की सेवा का अवसर है", "यहाँ प्राकृतिक सुंदरता है", "यहाँ युद्ध होते हैं"], feedback: "क्योंकि यहाँ जन्म लेकर मनुष्य ईश्वर की सेवा के योग्य बनता है, जो मोक्ष का मार्ग है।"},
+                    {numb: 18, question: "किस पुराण के अनुसार ‘भारत भूमि पर जन्म लेना देवतुल्य है’?", answer: "भागवतपुराण", options: ["शिवपुराण", "भागवतपुराण", "विष्णुपुराण", "रामायण"], feedback: "भागवतपुराण में कहा गया है कि भारत में जन्म लेने वाले मनुष्य देवत्व को प्राप्त करते हैं।"},
+                    {numb: 19, question: "भारत भूमि को ‘मातृभूमि’ क्यों कहा जाता है?", answer: "यह पवित्र और ममतामयी है", options: ["यह माताओं की भूमि है", "यह पवित्र और ममतामयी है", "यह केवल महिलाओं की भूमि है", "यह केवल राजाओं की भूमि है"], feedback: "आधुनिक पद्य में इसे 'वत्सला' (ममतामयी) कहा गया है, इसलिए यह मातृभूमि है।"},
+                    {numb: 20, question: "देवताओं के अनुसार ‘भारत भूमि’ का सबसे बड़ा गुण क्या है?", answer: "उसकी पवित्रता", options: ["उसकी संपत्ति", "उसकी पवित्रता", "उसकी भव्यता", "उसकी वीरता"], feedback: "पाठ के अनुसार, देवता भारत की निर्मलता (पवित्रता) और ममतामयी स्वरूप का गान करते हैं।"},
+                    {numb: 21, question: "भारत भूमि का स्वरूप कैसा है?", answer: "विशाल, मनोहर और सुंदर", options: ["कठोर और बंजर", "विशाल, मनोहर और सुंदर", "केवल पर्वतीय", "केवल मरुस्थलीय"], feedback: "पाठ में भारत भूमि को 'विशाला', 'रम्यरूपा' (मनोहर) और 'शोभना' (सुंदर) कहा गया है।"},
+                    {numb: 22, question: "भारत की प्राकृतिक संपदा का मुख्य आधार क्या है?", answer: "पर्वत और नदियाँ", options: ["पर्वत और नदियाँ", "रेगिस्तान", "मरुस्थल", "नगर"], feedback: "पाठ में सागर, पर्वत, झरने और नदियों को भारत की प्राकृतिक शोभा का मुख्य अंग बताया गया है।"},
+                    {numb: 23, question: "देवता किसके लिए ‘स्पृहा’ यानी इच्छा प्रकट करते हैं?", answer: "भारत भूमि पर जन्म लेने के लिए", options: ["युद्ध के लिए", "भारत भूमि पर जन्म लेने के लिए", "तपस्या करने के लिए", "राजकाज के लिए"], feedback: "देवता भारत भूमि पर जन्म लेने की इच्छा ('स्पृहा हि नः') प्रकट करते हैं।"},
+                    {numb: 24, question: "आधुनिक पद्य में भारत के प्रति कैसी भावना प्रकट की गई है?", answer: "देशभक्ति", options: ["निराशा", "देशभक्ति", "आलोचना", "उदासीनता"], feedback: "अंतिम पद्य में सभी भारतीयों के लिए देशभक्ति की भावना को श्रेष्ठ और आदर्श बताया गया है।"},
+                    {numb: 25, "question": "भारतभूमि के कौन-कौन से विशेषण पाठ में प्रयुक्त हुए हैं?", "answer": "निर्मला, वत्सला", "options": ["निर्मला, वत्सला", "कठोर, सूखी", "सुंदर, रमणीय", "पर्वतीय, उबड़-खाबड़"], "feedback": "आधुनिक पद्य में भारत को निर्मला (स्वच्छ) और वत्सला (ममतामयी) कहा गया है।"},
+                    {numb: 26, "question": "‘भारतमहिमा’ पाठ में ‘मातृभूमि’ के किस गुण का वर्णन है?", "answer": "उसकी पवित्रता और ममता", "options": ["उसकी समृद्धि", "उसकी पवित्रता और ममता", "उसकी सुंदरता", "उसकी वीरता"], "feedback": "पाठ में मातृभूमि को 'निर्मला' (पवित्र) और 'वत्सला' (ममतामयी) कहा गया है।"},
+                    {numb: 27, question: "विभिन्न धर्म और जाति के लोग एकता के भाव से कहाँ रहते हैं?", answer: "भारत में", options: ["चीन में", "अमेरिका में", "भारत में", "रूस में"], feedback: "पाठ के अनुसार, भारत में विभिन्न धर्म और जाति के लोग एकता के भाव से निवास करते हैं।"},
+                    {numb: 28, question: "‘सागरैः सेविता’ का क्या अर्थ है?", answer: "सागरों द्वारा सेवित", options: ["नदियों द्वारा सिंचित", "पर्वतों से घिरी हुई", "सागरों द्वारा सेवित", "वनों से ढकी हुई"], feedback: "इसका अर्थ है कि भारत भूमि सागरों द्वारा सेवित है, अर्थात इसके तटों पर सागर हैं।"},
+                    {numb: 29, "question": "‘प्रसिद्धं सदा भारतं वर्षमेतत्’ का भावार्थ क्या है?", "answer": "भारत का इतिहास हमेशा प्रसिद्ध रहा है", "options": ["भारत का इतिहास हमेशा प्रसिद्ध रहा है", "भारत का वर्तमान सदैव प्रसिद्ध है", "भारत का भविष्य सदैव प्रसिद्ध रहेगा", "उपरोक्त सभी"], "feedback": "इसका अर्थ है कि यह भारतवर्ष हमेशा से ही अपनी महिमा के लिए प्रसिद्ध रहा है।"},
+                    {numb: 30, question: "हमारा आदर्श क्या होना चाहिए?", answer: "देशभक्ति", options: ["स्वार्थ", "धन कमाना", "देशभक्ति", "आलस्य"], feedback: "पाठ का अंतिम संदेश है कि हमारी देशभक्ति ही हमारा परम आदर्श होनी चाहिए।"}
+                ]
+            }
+        },
+        "bhartiyaSanskar": {
+            name: "भारतीयसंस्काराः",
+            parts: {
+                "part1": [
+                    {numb: 1, question: "भारतीय संस्कृति में कुल कितने संस्कार होते हैं?", answer: "16", options: ["10", "12", "16", "18"], feedback: "भारतीय संस्कृति में कुल सोलह (षोडश) मुख्य संस्कार माने गए हैं।"},
+                    {numb: 2, question: "जन्मपूर्व संस्कारों में कौन-सा संस्कार शामिल है?", answer: "सीमन्तोनयन", options: ["नामकरण", "सीमन्तोनयन", "उपनयन", "चूडाकर्म"], feedback: "जन्म से पूर्व तीन संस्कार होते हैं - गर्भाधान, पुंसवन और सीमन्तोनयन।"},
+                    {numb: 3, question: "विवाह संस्कार का मुख्य उद्देश्य क्या है?", answer: "गृहस्थ जीवन की शुरुआत", options: ["जीवन का अंत", "शिक्षा प्राप्ति", "गृहस्थ जीवन की शुरुआत", "धार्मिक शिक्षा"], feedback: "विवाह संस्कार के द्वारा मनुष्य गृहस्थ जीवन में प्रवेश करता है।"},
+                    {numb: 4, question: "‘उपनयन संस्कार’ का मुख्य उद्देश्य क्या है?", answer: "शिक्षा का आरंभ", options: ["विवाह", "शिक्षा का आरंभ", "जीवन का अंत", "जन्म का संस्कार"], feedback: "उपनयन संस्कार के द्वारा गुरु, शिष्य को अपने घर (गुरुकुल) में शिक्षा के लिए लाते थे।"},
+                    {numb: 5, question: "‘गोदान संस्कार’ किसका दूसरा नाम है?", answer: "केशान्त", options: ["उपनयन", "केशान्त", "समावर्तन", "नामकरण"], feedback: "केशान्त संस्कार में गोदान मुख्य कर्म होता था, इसलिए इसे गोदान संस्कार भी कहते हैं।"},
+                    {numb: 6, question: "किस संस्कार में शिशु का नामकरण होता है?", answer: "नामकरण", options: ["जातकर्म", "चूडाकर्म", "नामकरण", "कर्णवेध"], feedback: "नामकरण संस्कार में शिशु का नाम रखा जाता है, जो शैशव अवस्था का एक प्रमुख संस्कार है।"},
+                    {numb: 7, question: "शिक्षा के अंत में कौन सा संस्कार होता है?", answer: "समावर्तन", options: ["अक्षरारम्भ", "उपनयन", "केशान्त", "समावर्तन"], feedback: "समावर्तन संस्कार का उद्देश्य शिष्य का गुरु के घर से अपने घर लौटना और गृहस्थ जीवन की तैयारी करना है।"},
+                    {numb: 8, question: "‘संस्कार’ का मौलिक अर्थ क्या है?", answer: "शुद्धिकरण", options: ["दोषों का संचार", "शुद्धिकरण", "जीवन का अंत", "जन्म का अनुष्ठान"], feedback: "संस्कार का मौलिक अर्थ शुद्ध करना और गुणों को धारण करना है।"},
+                    {numb: 9, question: "प्राचीन काल में शिष्य को क्या कहा जाता था?", answer: "ब्रह्मचारी", options: ["गुरुकुली", "गृहस्थ", "ब्रह्मचारी", "सन्यासी"], feedback: "प्राचीन काल में गुरुकुल में शिक्षा प्राप्त करने वाले शिष्य को ब्रह्मचारी कहा जाता था।"},
+                    {numb: 10, question: "विवाह संस्कार में कौन-सा कर्मकांड मुख्य होता है?", answer: "कन्यादान", options: ["उपनयन", "कन्यादान", "नामकरण", "अन्नप्राशन"], feedback: "विवाह संस्कार में कन्यादान, पाणिग्रहण, सिंदूरदान इत्यादि प्रमुख कर्मकांड होते हैं।"},
+                    {numb: 11, question: "‘समावर्तन संस्कार’ का उद्देश्य क्या है?", answer: "गृहस्थ जीवन में प्रवेश", options: ["गृहस्थ जीवन में प्रवेश", "शिक्षा का आरंभ", "जीवन का अंत", "जन्म का संस्कार"], feedback: "यह शिक्षा की समाप्ति पर होता है और शिष्य को गृहस्थ जीवन में प्रवेश के योग्य बनाता है।"},
+                    {numb: 12, question: "किस संस्कार में शिशु का अन्न-ग्रहण होता है?", answer: "अन्नप्राशन", options: ["नामकरण", "अन्नप्राशन", "चूडाकर्म", "कर्णवेध"], feedback: "अन्नप्राशन संस्कार में शिशु पहली बार अन्न ग्रहण करता है।"},
+                    {numb: 13, question: "‘कन्यादान’ किस संस्कार का हिस्सा है?", answer: "विवाह", options: ["उपनयन", "नामकरण", "विवाह", "अन्नप्राशन"], feedback: "कन्यादान विवाह संस्कार का एक महत्वपूर्ण और पवित्र कर्मकांड है।"},
+                    {numb: 14, question: "‘शैशव संस्कारों’ में कुल कितने संस्कार होते हैं?", answer: "6", options: ["3", "6", "8", "10"], feedback: "शैशव अवस्था में कुल छह संस्कार होते हैं - जातकर्म, नामकरण, निष्क्रमण, अन्नप्राशन, चूडाकर्म और कर्णवेध।"},
+                    {numb: 15, question: "‘संस्कार’ का क्या उद्देश्य होता है?", answer: "दोषों का निवारण", options: ["धन की प्राप्ति", "दोषों का निवारण", "जीवन का अंत", "धर्म का प्रचार"], feedback: "संस्कारों का मुख्य उद्देश्य दोषों को दूर करना और गुणों को अपनाना है।"}
+                ],
+                "part2": [
+                    {numb: 16, question: "‘गर्भाधान’ किस संस्कार का हिस्सा है?", answer: "जन्मपूर्व संस्कार", options: ["जन्मपूर्व संस्कार", "शिक्षा संस्कार", "विवाह संस्कार", "मरणोत्तर संस्कार"], feedback: "गर्भाधान जन्म से पूर्व होने वाले तीन संस्कारों में से पहला है।"},
+                    {numb: 17, question: "किस संस्कार के बाद शिष्य गृहस्थ जीवन में प्रवेश करता है?", answer: "समावर्तन", options: ["उपनयन", "केशान्त", "समावर्तन", "नामकरण"], feedback: "समावर्तन संस्कार के बाद ही शिष्य गृहस्थ जीवन के लिए तैयार माना जाता था।"},
+                    {numb: 18, question: "‘अक्षरारम्भ’ में क्या होता है?", answer: "अक्षर और अंक लेखन का आरंभ", options: ["अक्षर और अंक लेखन का आरंभ", "विवाह की तैयारी", "शिशु का नामकरण", "भोजन का आरंभ"], feedback: "अक्षरारम्भ संस्कार में शिशु अक्षर और अंक लिखना शुरू करता है।"},
+                    {numb: 19, question: "किस संस्कार में गुरु शिष्य को अपने घर में लाता है?", answer: "उपनयन", options: ["नामकरण", "उपनयन", "विवाह", "समावर्तन"], feedback: "उपनयन संस्कार के द्वारा गुरु शिष्य को अपने घर यानी गुरुकुल में शिक्षा के लिए लाते थे।"},
+                    {numb: 20, question: "‘संस्कार’ शब्द का प्रयोग आजकल किस रूप में होता है?", answer: "व्यंग्य रूप में", options: ["सम्मान के रूप में", "व्यंग्य रूप में", "धार्मिक रूप में", "साहित्यिक रूप में"], feedback: "आजकल 'संस्कार' शब्द सीमित होकर व्यंग्य के रूप में प्रयोग किया जाता है, जैसे - 'तुम बहुत संस्कारी हो!'।"},
+                    {numb: 21, question: "‘केशान्त संस्कार’ में कौन सा कर्म मुख्य होता है?", answer: "मुण्डन", options: ["मुण्डन", "नामकरण", "अन्नप्राशन", "उपनयन"], feedback: "केशान्त संस्कार में गुरु के घर पर ही प्रथम बार शिष्य का मुण्डन होता था।"},
+                    {numb: 22, question: "मरणोत्तर संस्कार का क्या नाम है?", answer: "अन्त्येष्टि", options: ["अन्त्येष्टि", "विवाह", "उपनयन", "केशान्त"], feedback: "मृत्यु के बाद होने वाले संस्कार को अन्त्येष्टि संस्कार कहा जाता है।"},
+                    {numb: 23, question: "भारतीय संस्कृति की विशिष्टता क्या है?", answer: "संस्कार", options: ["संस्कार", "धर्म", "शिक्षा", "साहित्य"], feedback: "पाठ के अनुसार, भारतीय जीवन में संस्कारों का विशेष महत्व है जो संस्कृति की पहचान हैं।"},
+                    {numb: 24, question: "शैशव अवस्था के कितने संस्कार होते हैं?", answer: "6", options: ["3", "4", "5", "6"], feedback: "यह प्रश्न दोहराया गया है। शैशव अवस्था के कुल छह संस्कार हैं।"},
+                    {numb: 25, question: "शिक्षा सम्बन्धी कितने संस्कार हैं?", answer: "पाँच", options: ["तीन", "चार", "पाँच", "छह"], feedback: "शिक्षा संस्कारों में अक्षरारम्भ, उपनयन, वेदारम्भ, केशान्त और समावर्तन, ये पाँच संस्कार आते हैं।"},
+                    {numb: 26, question: "संस्कारों को कितने भागों में बांटा गया है?", answer: "पाँच", options: ["चार", "पाँच", "छह", "सात"], feedback: "संस्कारों को मुख्य रूप से पाँच भागों में बांटा गया है - जन्मपूर्व (3), शैशव (6), शिक्षा (5), गृहस्थ (1-विवाह) और मरणोत्तर (1)।"},
+                    {numb: 27, question: "मनुष्य जीवन को कौन सुव्यवस्थित करता है?", answer: "संस्कार", options: ["धन", "शक्ति", "संस्कार", "राजनीति"], feedback: "संस्कार मनुष्य के जीवन को समय-समय पर अनुशासित और सुव्यवस्थित करते हैं।"},
+                    {numb: 28, question: "वेदों का अध्ययन किस संस्कार के अंतर्गत आता है?", answer: "वेदारम्भ", options: ["उपनयन", "वेदारम्भ", "समावर्तन", "केशान्त"], feedback: "वेदारम्भ संस्कार के अंतर्गत शिष्य गुरु के पास वेदों का अध्ययन शुरू करता था।"},
+                    {numb: 29, question: "प्राचीन संस्कृति की पहचान किससे होती है?", answer: "संस्कारों से", options: ["धर्म से", "धन से", "कर्म से", "संस्कारों से"], feedback: "प्राचीन भारतीय संस्कृति की पहचान उसके संस्कारों से होती है।"},
+                    {numb: 30, question: "सिंदूरदान किस संस्कार का हिस्सा है?", answer: "विवाह", options: ["उपनयन", "केशान्त", "विवाह", "अन्नप्राशन"], feedback: "सिंदूरदान विवाह संस्कार का एक अभिन्न अंग है।"}
+                ]
+            }
+        },
+        "nitiSloka": {
+            name: "नीतिश्लोकाः",
+            parts: {
+                "part1": [
+                    {numb: 1, question: "‘नीतिश्लोकाः’ पाठ के श्लोक किस ग्रन्थ से संकलित हैं?", answer: "महाभारत", options: ["रामायण", "महाभारत", "वेद", "पुराण"], feedback: "यह पाठ महाभारत के उद्योग पर्व के अंतर्गत 'विदुरनीति' से संकलित है।"},
+                    {numb: 2, question: "विदुरनीति किस पर्व का हिस्सा है?", answer: "उद्योग पर्व", options: ["उद्योग पर्व", "सभा पर्व", "आदिपर्व", "वन पर्व"], feedback: "विदुरनीति महाभारत के उद्योग पर्व (अध्याय 33-40) का एक अंश है।"},
+                    {numb: 3, question: "किसने अपने चित्त की शांति के लिए विदुर से परामर्श किया?", answer: "धृतराष्ट्र", options: ["अर्जुन", "कर्ण", "धृतराष्ट्र", "भीष्म"], feedback: "युद्ध निकट पाकर राजा धृतराष्ट्र ने अपने मन की शांति के लिए मंत्री विदुर से प्रश्न पूछे।"},
+                    {numb: 4, question: "किसे ‘पंडित’ कहा गया है ‘नीतिश्लोकाः’ के अनुसार?", answer: "जो शर्दी-गर्मी, भय से न विचलित हो", options: ["जो दूसरों के रहस्यों को जानता हो", "जो शर्दी-गर्मी, भय से न विचलित हो", "जो केवल पढ़ा-लिखा हो", "जो धनी हो"], feedback: "जिसके कर्मों में सर्दी-गर्मी, भय-प्रेम, समृद्धि-असमृद्धि कोई बाधा नहीं डालते, वही पंडित कहलाता है।"},
+                    {numb: 5, question: "‘नीतिश्लोकाः’ में मूर्ख का एक लक्षण क्या बताया गया है?", answer: "जो बिना बुलाए जाता है", options: ["जो सदा सच बोलता हो", "जो बिना बुलाए जाता है", "जो धैर्यवान होता है", "जो शांत रहता है"], feedback: "जो बिना बुलाए प्रवेश करता है, बिना पूछे बहुत बोलता है, और अविश्वासियों पर विश्वास करता है, वह मूर्ख है।"},
+                    {numb: 6, question: "नरक के कितने द्वार ‘नीतिश्लोकाः’ में बताए गए हैं?", answer: "तीन", options: ["एक", "दो", "तीन", "चार"], feedback: "नरक के तीन द्वार बताए गए हैं, जो आत्मा का नाश करते हैं।"},
+                    {numb: 7, question: "‘नीतिश्लोकाः’ पाठ के अनुसार नरक के द्वार कौन से हैं?", answer: "काम, क्रोध, लोभ", options: ["धन, लोभ, मोह", "काम, क्रोध, लोभ", "क्रोध, ईर्ष्या, मोह", "मोह, भय, आलस्य"], feedback: "काम, क्रोध और लोभ - ये नरक के तीन द्वार हैं, इसलिए इन तीनों को त्याग देना चाहिए।"},
+                    {numb: 8, question: "उन्नति चाहने वाले मनुष्य को कितने दोष त्याग देने चाहिए?", answer: "छः", options: ["दो", "चार", "पाँच", "छः"], feedback: "उन्नति की इच्छा रखने वाले पुरुषों को नींद, तंद्रा (उनींदापन), भय, क्रोध, आलस्य तथा दीर्घसूत्रता (काम टालना) - इन छह दोषों को त्याग देना चाहिए।"},
+                    {numb: 9, question: "‘नीतिश्लोकाः’ के अनुसार सत्य से किसकी रक्षा होती है?", answer: "धर्म की", options: ["कुल की", "धर्म की", "विद्या की", "रूप की"], feedback: "सत्य से धर्म की रक्षा होती है। (सत्येन रक्ष्यते धर्मः...)"},
+                    {numb: 10, question: "‘नीतिश्लोकाः’ में बताया गया है कि किससे कुल की रक्षा होती है?", answer: "अच्छे आचरण से", options: ["धन से", "विद्या से", "अच्छे आचरण से", "शस्त्र से"], feedback: "अच्छे आचरण (वृत्त) से कुल की रक्षा होती है। (वृत्तेन रक्ष्यते कुलम्...)"},
+                    {numb: 11, question: "‘नीतिश्लोकाः’ में किसे विशेष रूप से रक्षित करने योग्य बताया गया है?", answer: "स्त्रियों को", options: ["राजा को", "प्रजा को", "स्त्रियों को", "बालकों को"], feedback: "स्त्रियाँ घर की लक्ष्मी कही गई हैं, वे पूजनीय और महाभाग्यशाली होती हैं, इसलिए उनकी विशेष रूप से रक्षा करनी चाहिए।"},
+                    {numb: 12, question: "‘नीतिश्लोकाः’ के अनुसार किसे मूढचेता (मूर्ख हृदय वाला) कहा गया है?", answer: "जो अविश्वासियों पर विश्वास करता है", options: ["जो धर्म का पालन करता है", "जो अविश्वासियों पर विश्वास करता है", "जो सत्य बोलता है", "जो ज्ञान प्राप्त करता है"], feedback: "जो बिना बुलाए प्रवेश करता है, बिना पूछे बोलता है और अविश्वासियों पर विश्वास करता है, वह मूर्ख हृदय वाला अधम पुरुष है।"},
+                    {numb: 13, question: "‘नीतिश्लोकाः’ में पराक्रम से किसका नाश होता है?", answer: "अनर्थ का", options: ["धर्म का", "अनर्थ का", "सत्य का", "धन का"], feedback: "पराक्रम (वीरता) से अनर्थ (संकट) का नाश होता है। (पराक्रमोऽनर्थं हन्ति...)"},
+                    {numb: 14, question: "‘नीतिश्लोकाः’ में क्षमा किसका नाश करती है?", answer: "क्रोध का", options: ["लोभ का", "क्रोध का", "भय का", "मोह का"], feedback: "क्षमा क्रोध का नाश करती है। (क्षमा क्रोधं हन्ति...)"},
+                    {numb: 15, question: "‘नीतिश्लोकाः’ में कौन-सी एक ही वस्तु परम शांति देने वाली है?", answer: "अहिंसा", options: ["विद्या", "क्षमा", "अहिंसा", "धर्म"], feedback: "एक ही धर्म परम श्रेष्ठ है, एक ही क्षमा उत्तम शांति है, एक ही विद्या परम संतोष देने वाली है और एक ही अहिंसा सुख देने वाली है।"}
+                ],
+                "part2": [
+                    {numb: 16, question: "‘नीतिश्लोकाः’ में किन व्यक्तियों को दुर्लभ बताया गया है?", answer: "अप्रिय लेकिन उचित बोलने वाले", options: ["प्रिय बोलने वाले", "अप्रिय लेकिन उचित बोलने वाले", "धनी व्यक्ति", "गरीब व्यक्ति"], feedback: "हे राजन्! हमेशा प्रिय बोलने वाले पुरुष आसानी से मिल जाते हैं, लेकिन अप्रिय और कल्याणकारी बात कहने वाला और सुनने वाला, दोनों ही दुर्लभ हैं।"},
+                    {numb: 17, question: "‘नीतिश्लोकाः’ के अनुसार अहिंसा से क्या प्राप्त होता है?", answer: "सुख", options: ["शिक्षा", "सुख", "सम्मान", "धन"], feedback: "एक ही अहिंसा परम सुख देने वाली है। (अहिंसैका सुखावहा...)"},
+                    {numb: 18, question: "‘नीतिश्लोकाः’ के अनुसार किस प्रकार के पुरुष सुलभ होते हैं?", answer: "सदैव प्रिय बोलने वाले", options: ["सदैव प्रिय बोलने वाले", "सदैव मौन रहने वाले", "सदा क्रोधित रहने वाले", "सदैव असत्य बोलने वाले"], feedback: "हमेशा मीठा-मीठा और प्रिय बोलने वाले लोग आसानी से मिल जाते हैं।"},
+                    {numb: 19, question: "‘नीतिश्लोकाः’ में किन्हें गृह की लक्ष्मी कहा गया है?", answer: "स्त्रियों को", options: ["धन को", "पुत्र को", "स्त्रियों को", "पशु को"], feedback: "स्त्रियों को घर की लक्ष्मी और प्रकाश कहा गया है, जिनकी रक्षा करना विशेष कर्तव्य है।"},
+                    {numb: 20, question: "‘नीतिश्लोकाः’ में धर्म की रक्षा किससे होती है?", answer: "सत्य से", options: ["पराक्रम से", "सत्य से", "धन से", "विद्या से"], feedback: "यह प्रश्न दोहराया गया है। सत्य से धर्म की रक्षा होती है।"},
+                    {numb: 21, question: "‘नीतिश्लोकाः’ के अनुसार विद्या की रक्षा किससे होती है?", answer: "योग (अभ्यास) से", options: ["धन से", "योग (अभ्यास) से", "पराक्रम से", "तप से"], feedback: "योग (निरंतर अभ्यास) से विद्या की रक्षा होती है। (योगेन रक्ष्यते विद्या...)"},
+                    {numb: 22, question: "‘नीतिश्लोकाः’ के अनुसार किससे रूप की रक्षा होती है?", answer: "मृजा से (स्वच्छता/शृंगार से)", options: ["सत्य से", "मृजा से (स्वच्छता/शृंगार से)", "तप से", "योग से"], feedback: "मृजा (स्वच्छता या उबटन) से रूप की रक्षा होती है। (मृजया रक्ष्यते रूपम्...)"},
+                    {numb: 23, question: "विदुर कौन थे?", answer: "मंत्री", options: ["राजा", "मंत्री", "सैनिक", "कवि"], feedback: "विदुर हस्तिनापुर के राजा धृतराष्ट्र के महामंत्री थे।"},
+                    {numb: 24, "question": "सभी जीवों के सत्य को जानने वाला कौन है?", "answer": "पंडित", "options": ["राजा", "मंत्री", "पंडित", "छात्र"], "feedback": "जो सभी प्राणियों के रहस्य को जानता है, सभी कर्मों में कुशल है और मनुष्यों के उपायों को जानता है, वह पंडित है।"},
+                    {numb: 25, question: "किसके प्रश्न का उत्तर विदुर देते हैं?", answer: "धृतराष्ट्र", options: ["अर्जुन", "दुर्योधन", "धृतराष्ट्र", "कृष्ण"], feedback: "यह पाठ धृतराष्ट्र के प्रश्नों और विदुर के उत्तरों पर आधारित है।"},
+                    {numb: 26, question: "बिना बुलाए कौन आता है?", answer: "मूर्ख", options: ["सज्जन", "दुर्जन", "मूर्ख", "विद्वान"], feedback: "जो बिना बुलाए आता है, वह मूर्ख और अधम पुरुष कहलाता है।"},
+                    {numb: 27, question: "परम संतोष देने वाली क्या है?", answer: "विद्या", options: ["क्षमा", "धर्म", "अहिंसा", "विद्या"], feedback: "एक ही विद्या परम संतोष देने वाली है। (विद्यैका परमा तृप्तिः...)"},
+                    {numb: 28, question: "अपनी प्रगति चाहने वालों को कितने दोषों को त्याग देना चाहिए?", answer: "छह", options: ["पाँच", "छह", "सात", "आठ"], feedback: "यह प्रश्न दोहराया गया है। उन्नति चाहने वालों को छह दोषों का त्याग करना चाहिए।"},
+                    {numb: 29, "question": "काम, क्रोध और लोभ किसके द्वार हैं?", "answer": "नरक के", "options": ["स्वर्ग के", "नरक के", "पृथ्वी के", "पाताल के"], "feedback": "ये तीनों आत्मा का नाश करने वाले नरक के द्वार हैं।"},
+                    {numb: 30, question: "घर की शोभा कौन हैं?", answer: "स्त्रियाँ", options: ["पुरुष", "बच्चे", "स्त्रियाँ", "बुजुर्ग"], feedback: "स्त्रियों को घर की शोभा, लक्ष्मी और प्रकाश कहा गया है।"}
+                ]
+            }
+        },
+        "karmveerKatha": {
+            name: "कर्मवीर कथा",
+            parts: {
+                "part1": [
+                    {numb: 1, question: "‘कर्मवीर कथा’ में मुख्य पात्र कौन है?", answer: "रामप्रवेश राम", options: ["रामप्रवेश राम", "भीखनटोला", "शिक्षक", "विद्यार्थी"], feedback: "इस कथा का मुख्य पात्र रामप्रवेश राम नामक एक दलित बालक है।"},
+                    {numb: 2, question: "रामप्रवेश राम का जन्म कहाँ हुआ था?", answer: "भीखनटोला", options: ["बिहारशरीफ", "भीखनटोला", "दिल्ली", "पटना"], feedback: "कर्मवीर रामप्रवेश राम का जन्म बिहार राज्य के दुर्गम प्रांत में स्थित भीखनटोला नामक गाँव में हुआ था।"},
+                    {numb: 3, question: "‘कर्मवीर कथा’ के अनुसार रामप्रवेश राम ने किस परीक्षा में प्रथम स्थान प्राप्त किया?", answer: "स्नातक परीक्षा", options: ["प्राथमिक परीक्षा", "स्नातक परीक्षा", "केन्द्रीय लोक सेवा परीक्षा", "माध्यमिक परीक्षा"], feedback: "उन्होंने अपने महाविद्यालय की स्नातक परीक्षा में प्रथम स्थान प्राप्त कर अपनी संस्था की ख्याति बढ़ाई।"},
+                    {numb: 4, question: "रामप्रवेश राम के परिवार की आर्थिक स्थिति कैसी थी?", answer: "बहुत गरीब", options: ["बहुत समृद्ध", "सामान्य", "बहुत गरीब", "अमीर"], feedback: "उनका परिवार गाँव के बाहर एक टूटी-फूटी कुटिया में रहता था जो केवल धूप से बचाती थी, वर्षा से नहीं।"},
+                    {numb: 5, question: "शिक्षक ने किसे पढ़ाना आरम्भ किया?", answer: "रामप्रवेश राम को", options: ["अमीर बालक को", "रामप्रवेश राम को", "अपने पुत्र को", "किसी को नहीं"], feedback: "शिक्षक ने रामप्रवेश राम को उनके खेल में मग्न स्वभाव और प्रतिभा को देखकर पढ़ाना शुरू किया।"},
+                    {numb: 6, question: "‘कर्मवीर कथा’ में रामप्रवेश राम की सफलता का मुख्य कारण क्या था?", answer: "परिश्रम", options: ["धन", "शिक्षा", "परिश्रम", "संपर्क"], feedback: "यह कथा परिश्रम के महत्व को दर्शाती है, कि कैसे परिश्रम से व्यक्ति शीर्ष पर पहुँच सकता है। 'उद्योगिनं पुरुषसिंहमुपैति लक्ष्मीः'"},
+                    {numb: 7, question: "रामप्रवेश राम ने किस क्षेत्र में उच्च पद प्राप्त किया?", answer: "प्रशासन", options: ["चिकित्सा", "प्रशासन", "विज्ञान", "शिक्षा"], feedback: "उन्होंने केन्द्रीय लोक सेवा परीक्षा में उन्नत स्थान प्राप्त कर प्रशासन में अपना नाम रोशन किया।"},
+                    {numb: 8, question: "रामप्रवेश राम की पढ़ाई में किस चीज ने उसकी मदद की?", answer: "शिष्यवृत्ति", options: ["ट्यूशन", "पुस्तकालय", "शिष्यवृत्ति", "मित्र"], feedback: "उच्च विद्यालय में उन्होंने छात्रवृत्ति और शिक्षण से प्राप्त धन से अपनी पढ़ाई जारी रखी।"},
+                    {numb: 9, question: "रामप्रवेश राम ने किस परीक्षा में सफलता प्राप्त की?", answer: "केन्द्रीय लोक सेवा परीक्षा", options: ["स्नातक परीक्षा", "नागरिक परीक्षा", "केन्द्रीय लोक सेवा परीक्षा", "साक्षात्कार परीक्षा"], feedback: "स्नातक के बाद उन्होंने केन्द्रीय लोक सेवा परीक्षा (UPSC) में बहुत अच्छा स्थान प्राप्त किया।"},
+                    {numb: 10, question: "‘कर्मवीर कथा’ समाज के किस वर्ग की कथा है?", answer: "दलित वर्ग", options: ["धनी वर्ग", "मध्यम वर्ग", "दलित वर्ग", "शिक्षक वर्ग"], feedback: "यह कथा एक दलित और निर्धन परिवार के बालक के संघर्ष और सफलता की कहानी है।"},
+                    {numb: 11, question: "भीखनटोला देखने कौन आया था?", answer: "शिक्षक", options: ["नेता", "अभिनेता", "शिक्षक", "डॉक्टर"], feedback: "एक नवीन दृष्टि वाले सामाजिक समरसता के पक्षधर शिक्षक भीखनटोला देखने आए थे।"},
+                    {numb: 12, question: "रामप्रवेश राम ने स्नातक की पढ़ाई कहाँ से पूरी की?", answer: "महाविद्यालय से", options: ["गाँव से", "शहर से", "महाविद्यालय से", "विदेश से"], feedback: "उन्होंने महाविद्यालय में प्रवेश लिया और अपनी मेहनत से वहाँ भी शिक्षकों के प्रिय बन गए।"},
+                    {numb: 13, question: "रामप्रवेश राम की प्रतिष्ठा कहाँ है?", answer: "अपने प्रान्त और केंद्र शासन में", options: ["केवल अपने गाँव में", "केवल अपने राज्य में", "अपने प्रान्त और केंद्र शासन में", "विदेशों में"], feedback: "आज रामप्रवेश राम की प्रतिष्ठा अपने राज्य और केंद्र सरकार, दोनों में है।"},
+                    {numb: 14, question: "परिश्रमी पुरुष को क्या प्राप्त होती है?", answer: "लक्ष्मी", options: ["सरस्वती", "दुर्गा", "लक्ष्मी", "शांति"], feedback: "कहा गया है कि उद्योगी (परिश्रमी) पुरुष को ही लक्ष्मी (समृद्धि) प्राप्त होती है।"},
+                    {numb: 15, question: "कर्मवीर कौन था?", answer: "रामप्रवेश राम", options: ["शिक्षक", "छात्र", "रामप्रवेश राम", "भीखन"], feedback: "रामप्रवेश राम ही इस कथा के कर्मवीर हैं।"}
+                ]
+            }
+        },
+        "swamiDayanand": {
+            name: "स्वामी दयानन्दः",
+            parts: {
+                "part1": [
+                    {numb: 1, question: "स्वामी दयानन्द का जन्म कहाँ हुआ था?", answer: "टंकारा", options: ["वाराणसी", "अहमदाबाद", "टंकारा", "दिल्ली"], feedback: "स्वामी दयानन्द का जन्म गुजरात प्रदेश के टंकारा नामक गाँव में 1824 ईस्वी में हुआ था।"},
+                    {numb: 2, question: "स्वामी दयानन्द का बचपन का नाम क्या था?", answer: "मूलशंकर", options: ["शिवशंकर", "रामशंकर", "मूलशंकर", "दयानन्द"], feedback: "स्वामी दयानन्द के बचपन का नाम मूलशंकर था।"},
+                    {numb: 3, question: "स्वामी दयानन्द की शिक्षा किस भाषा में प्रारंभ हुई?", answer: "संस्कृत", options: ["हिंदी", "संस्कृत", "उर्दू", "गुजराती"], feedback: "उनके परिवार में कर्मकांडी माहौल होने के कारण उनकी शिक्षा संस्कृत भाषा से ही प्रारंभ हुई।"},
+                    {numb: 4, question: "स्वामी दयानन्द के जीवन में शिवरात्रि का पर्व क्यों महत्वपूर्ण है?", answer: "पहली बार मूर्ति पूजा का विरोध किया", options: ["पहली बार उपवास किया", "पहली बार मूर्ति पूजा का विरोध किया", "शिव की महिमा का अनुभव किया", "शिवरात्रि के दिन उनका जन्म हुआ"], feedback: "शिवरात्रि के दिन मूर्ति पर चढ़ाए प्रसाद को चूहे को खाते देखकर उनके मन में मूर्तिपूजा के प्रति अनास्था उत्पन्न हो गई।"},
+                    {numb: 5, question: "स्वामी दयानन्द के गुरु कौन थे?", answer: "विरजानन्द", options: ["स्वामी विवेकानन्द", "गुरु नानक", "विरजानन्द", "स्वामी रामकृष्ण"], feedback: "मथुरा में उन्होंने विरजानन्द नामक एक अंधे विद्वान को अपना गुरु बनाया।"},
+                    {numb: 6, question: "स्वामी दयानन्द ने किस ग्रंथ की रचना की?", answer: "सत्यार्थ प्रकाश", options: ["भगवद गीता", "सत्यार्थ प्रकाश", "रामायण", "वेद"], feedback: "अपने सिद्धांतों के संकलन के लिए उन्होंने 'सत्यार्थ प्रकाश' नामक ग्रंथ की राष्ट्रभाषा हिन्दी में रचना की।"},
+                    {numb: 7, question: "आर्य समाज की स्थापना किस वर्ष हुई?", answer: "1875", options: ["1857", "1875", "1885", "1890"], feedback: "स्वामी दयानन्द ने 1875 ईस्वी में मुम्बई नगर में आर्य समाज संस्था की स्थापना की।"},
+                    {numb: 8, question: "स्वामी दयानन्द ने किसके माध्यम से वेदों का प्रचार किया?", answer: "आर्य समाज", options: ["गुरुकुल", "आर्य समाज", "डी.ए.वी विद्यालय", "सत्यार्थ प्रकाश"], feedback: "उन्होंने आर्य समाज के माध्यम से वैदिक धर्म और सत्य के प्रचार-प्रसार का कार्य किया।"},
+                    {numb: 9, question: "स्वामी दयानन्द ने मूर्ति पूजा का विरोध क्यों किया?", answer: "क्योंकि उन्होंने चूहे को प्रसाद खाते देखा", options: ["क्योंकि उन्होंने चूहे को प्रसाद खाते देखा", "क्योंकि उन्हें शिव पर विश्वास नहीं था", "क्योंकि वेदों में इसका उल्लेख नहीं है", "क्योंकि उनके गुरू ने ऐसा कहा"], feedback: "शिव की मूर्ति पर चूहे को प्रसाद खाते देखकर उन्हें विश्वास हो गया कि मूर्ति में देवता नहीं होते।"},
+                    {numb: 10, question: "स्वामी दयानन्द ने किस भाषा में वेदों का भाष्य किया?", answer: "दोनों हिंदी और संस्कृत", options: ["हिंदी", "अंग्रेजी", "संस्कृत", "दोनों हिंदी और संस्कृत"], feedback: "उन्होंने ऋग्वेद आदि भाष्यों की रचना संस्कृत और हिन्दी, दोनों भाषाओं में की।"},
+                    {numb: 11, question: "आधुनिक भारत में समाज और शिक्षा के महान उद्धारक कौन थे?", answer: "स्वामी दयानन्द", options: ["राजा राममोहन राय", "स्वामी दयानन्द", "विवेकानन्द", "ईश्वरचंद्र विद्यासागर"], feedback: "उन्नीसवीं शताब्दी में स्वामी दयानन्द को समाज सुधारकों में प्रमुख माना जाता है।"},
+                    {numb: 12, question: "स्वामी दयानन्द के परिवार के लोग किसके उपासक थे?", answer: "शिव के", options: ["विष्णु के", "शिव के", "शक्ति के", "गणेश के"], feedback: "उनका परिवार शैव (शिव का उपासक) था।"},
+                    {numb: 13, "question": "स्वामी दयानन्द ने किस सामाजिक कुप्रथा का विरोध किया?", "answer": "उपरोक्त सभी", "options": ["बाल विवाह", "विधवा विवाह का समर्थन", "मूर्ति पूजा का खंडन", "उपरोक्त सभी"], "feedback": "उन्होंने जातिवाद, अस्पृश्यता, बाल विवाह, मूर्तिपूजा जैसी कुरीतियों का खंडन किया और विधवा विवाह का समर्थन किया।"},
+                    {numb: 14, question: "स्वामी दयानन्द ने किस संस्था की स्थापना की?", answer: "आर्य समाज", options: ["ब्रह्म समाज", "आर्य समाज", "रामकृष्ण मिशन", "भारतीय राष्ट्रीय कांग्रेस"], feedback: "यह प्रश्न दोहराया गया है। उन्होंने 1875 में आर्य समाज की स्थापना की।"},
+                    {numb: 15, question: "स्वामी दयानन्द के अनुसार वास्तविक ज्ञान कहाँ मिलता है?", answer: "वेदों में", options: ["मंदिरों में", "गुरुकुलों में", "वेदों में", "तीर्थ स्थानों में"], feedback: "उन्होंने हमेशा वैदिक धर्म और वेदों की ओर लौटने का संदेश दिया ('वेदों की ओर लौटो')।"}
+                ],
+                "part2": [
+                    {numb: 16, question: "स्वामी दयानन्द का उद्देश्य क्या था?", answer: "समाज सुधार", options: ["भारत को स्वतंत्र करना", "समाज सुधार", "धार्मिक प्रचार", "शिक्षा का प्रसार"], feedback: "उनका मुख्य उद्देश्य भारतीय समाज में फैली कुरीतियों को दूर कर उसका उद्धार करना था।"},
+                    {numb: 17, question: "स्वामी दयानन्द का किससे वैराग्य हुआ?", answer: "सांसारिक जीवन से", options: ["मूर्ति पूजा से", "वेदों से", "शिक्षा से", "सांसारिक जीवन से"], feedback: "अपनी छोटी बहन और चाचा की मृत्यु को देखकर उनके मन में संसार के प्रति वैराग्य भाव उत्पन्न हो गया।"},
+                    {numb: 18, question: "स्वामी दयानन्द ने किस प्रकार की शिक्षा को पुनर्जीवित किया?", answer: "गुरुकुल शिक्षा", options: ["अंग्रेजी शिक्षा", "आधुनिक शिक्षा", "गुरुकुल शिक्षा", "धार्मिक शिक्षा"], feedback: "उनके अनुयायियों ने डी.ए.वी. (दयानन्द एंग्लो-वैदिक) विद्यालयों की स्थापना की, जो आधुनिक और वैदिक शिक्षा का संगम है।"},
+                    {numb: 19, question: "स्वामी दयानन्द के अनुसार मूर्तिपूजा क्या है?", answer: "आडंबर", options: ["सत्य", "आडंबर", "धर्म", "पूजा का सही तरीका"], feedback: "उन्होंने मूर्तिपूजा को एक आडंबर माना और उसका खंडन किया।"},
+                    {numb: 20, question: "आर्य समाज का उद्देश्य क्या था?", answer: "समाज सुधार", options: ["समाज सुधार", "धर्म का प्रचार", "शिक्षा का प्रसार", "सत्य का प्रचार"], feedback: "आर्य समाज का मुख्य उद्देश्य समाज में व्याप्त कुरीतियों को दूर करना और वैदिक धर्म की पुनः स्थापना करना था।"},
+                    {numb: 21, question: "स्वामी दयानन्द की मृत्यु किस वर्ष हुई?", answer: "1883", options: ["1875", "1883", "1890", "1900"], feedback: "स्वामी दयानन्द का निधन 1883 ईस्वी में हुआ।"},
+                    {numb: 22, question: "घर छोड़कर मूलशंकर कहाँ गए?", answer: "मथुरा", options: ["काशी", "वृंदावन", "मथुरा", "अयोध्या"], feedback: "घर छोड़ने के बाद घूमते हुए वे मथुरा में अपने गुरु विरजानन्द के पास पहुँचे।"},
+                    {numb: 23, question: "डी.ए.वी. विद्यालय समूह की स्थापना कब हुई?", answer: "1883 के बाद", options: ["1875 में", "1883 में", "1883 के बाद", "1900 में"], feedback: "स्वामी दयानन्द की मृत्यु के बाद उनके अनुयायियों ने 1883 में डी.ए.वी. विद्यालयों की स्थापना की।"},
+                    {numb: 24, question: "सत्यार्थ प्रकाश नामक ग्रंथ किस भाषा में है?", answer: "हिन्दी", options: ["संस्कृत", "गुजराती", "हिन्दी", "मराठी"], feedback: "यह ग्रंथ राष्ट्रभाषा हिन्दी में लिखा गया था ताकि आम लोग भी इसे समझ सकें।"},
+                    {numb: 25, question: "समाज में फैली अनेक कुरीतियाँ कौन सी थीं?", answer: "उपरोक्त सभी", options: ["जातिवाद", "अस्पृश्यता", "धार्मिक आडंबर", "उपरोक्त सभी"], feedback: "तत्कालीन समाज में जातिवाद, अस्पृश्यता, बाल विवाह, विधवाओं की दुर्दशा और धार्मिक आडंबर जैसी अनेक कुरीतियाँ थीं।"},
+                    {numb: 26, question: "किसने वेदों का भाष्य संस्कृत और हिंदी में लिखा?", answer: "स्वामी दयानन्द", options: ["विरजानन्द", "स्वामी दयानन्द", "विवेकानन्द", "रामकृष्ण परमहंस"], feedback: "स्वामी दयानन्द ने वेदों का भाष्य संस्कृत और हिंदी दोनों भाषाओं में किया ताकि वेदों का ज्ञान जन-जन तक पहुँचे।"},
+                    {numb: 27, question: "स्वामी दयानन्द क्या थे?", answer: "समाज सुधारक", options: ["किसान", "डॉक्टर", "समाज सुधारक", "अभिनेता"], feedback: "वे उन्नीसवीं सदी के एक महान समाज सुधारक थे।"},
+                    {numb: 28, "question": "मध्यकाल में भारतीय समाज को किसने दूषित किया?", "answer": "कुरीतियों ने", "options": ["मुगलों ने", "अंग्रेजों ने", "कुरीतियों ने", "अशिक्षा ने"], "feedback": "मध्यकाल में अनेक गलत रीति-रिवाजों ने भारतीय समाज को दूषित कर दिया था।"},
+                    {numb: 29, "question": "किसकी शाखाएँ देश-विदेश में हैं?", "answer": "आर्य समाज की", "options": ["ब्रह्म समाज की", "रामकृष्ण मिशन की", "आर्य समाज की", "डी.ए.वी. की"], "feedback": "आज आर्य समाज की शाखाएँ और उपशाखाएँ देश और विदेशों में लगभग हर नगर में स्थित हैं।"},
+                    {numb: 30, "question": "मूलशंकर को किसके प्रति अनास्था हुई?", "answer": "मूर्तिपूजा के प्रति", "options": ["वेदों के प्रति", "गुरु के प्रति", "मूर्तिपूजा के प्रति", "संसार के प्रति"], "feedback": "शिवरात्रि की घटना के बाद मूलशंकर को मूर्तिपूजा के प्रति अनास्था हो गई।"}
+                ]
+            }
+        },
+        "mandakiniVarnam": {
+            name: "मन्दाकिनीवर्णनम्",
+            parts: {
+                "part1": [
+                    {numb: 1, question: "मन्दाकिनी नदी का वर्णन किस महाकाव्य से संकलित है?", answer: "वाल्मीकि रामायण", options: ["महाभारत", "वाल्मीकि रामायण", "रघुवंश", "मेघदूत"], feedback: "यह पाठ वाल्मीकि रामायण के अयोध्याकाण्ड के 95वें सर्ग से लिया गया है।"},
+                    {numb: 2, question: "मन्दाकिनी नदी किस स्थान के निकट बहती है?", answer: "चित्रकूट", options: ["चित्रकूट", "अयोध्या", "काशी", "मथुरा"], feedback: "वनवास के दौरान राम, सीता और लक्ष्मण चित्रकूट पर्वत के निकट बहने वाली मन्दाकिनी नदी के पास निवास करते हैं।"},
+                    {numb: 3, question: "राम, मन्दाकिनी नदी की शोभा किसे दिखा रहे हैं?", answer: "सीता को", options: ["लक्ष्मण को", "भरत को", "हनुमान को", "सीता को"], feedback: "श्रीराम, मन्दाकिनी नदी की प्राकृतिक सुंदरता का वर्णन अपनी पत्नी सीता को संबोधित करते हुए करते हैं।"},
+                    {numb: 4, question: "मन्दाकिनी नदी का वर्णन किस छंद में किया गया है?", answer: "अनुष्टुप", options: ["शिखरिणी", "वसंततिलका", "अनुष्टुप", "मालिनी"], feedback: "रामायण के अधिकांश श्लोकों की तरह, यह वर्णन भी मुख्य रूप से अनुष्टुप छंद में है।"},
+                    {numb: 5, question: "मन्दाकिनी नदी के तट पर कौन से वृक्ष उगते हैं?", answer: "फलों और फूलों के वृक्ष", options: ["केले के पेड़", "नारियल के पेड़", "फलों और फूलों के वृक्ष", "बांस के पेड़"], feedback: "नदी का तट फूलों और फलों से लदे हुए वृक्षों से सुशोभित है।"},
+                    {numb: 6, question: "मन्दाकिनी नदी का जल किसके पीने से गंदा (कलुषित) हो गया है?", answer: "हिरणों के समूह", options: ["मछलियों के", "हिरणों के समूह", "पक्षियों के", "मनुष्यों के"], feedback: "श्लोक के अनुसार, हिरणों के झुंड द्वारा पिए जाने से नदी का जल कलुषित (गंदला) हो गया है।"},
+                    {numb: 7, question: "मन्दाकिनी नदी में ऋषि लोग किस प्रकार के वस्त्र पहनकर स्नान करते हैं?", answer: "मृगचर्म और वल्कल", options: ["सूती वस्त्र", "मृगचर्म और वल्कल", "रेशमी वस्त्र", "ऊनी वस्त्र"], feedback: "तपस्वी ऋषिगण जटा और मृगचर्म धारण करके नदी में स्नान कर रहे हैं।"},
+                    {numb: 8, question: "मन्दाकिनी नदी में ऋषि लोग किसकी पूजा कर रहे हैं?", answer: "सूर्य की", options: ["चंद्रमा की", "वायु की", "सूर्य की", "अग्नि की"], feedback: "नियमपूर्वक व्रत करने वाले श्रेष्ठ मुनि अपनी भुजाओं को ऊपर उठाकर सूर्य की उपासना कर रहे हैं।"},
+                    {numb: 9, question: "मन्दाकिनी नदी के दोनों ओर क्या दिखाई देता है?", answer: "पर्वत", options: ["मंदिर", "पर्वत", "जलाशय", "वन"], feedback: "राम कहते हैं कि देखो, पर्वत नदी के दोनों ओर ऐसे लग रहे हैं जैसे वे ध्यान में लीन हों।"},
+                    {numb: 10, question: "मन्दाकिनी नदी का जल किस प्रकार का है?", answer: "मणि के समान निर्मल", options: ["गहरा नीला", "मणि के समान निर्मल", "दूध जैसा सफेद", "लाल"], feedback: "नदी का जल मणि के समान पूरी तरह से निर्मल और स्वच्छ है।"},
+                    {numb: 11, question: "मन्दाकिनी नदी में कौन तैरते हुए दिखाई दे रहे हैं?", answer: "फूल", options: ["कछुए", "फूल", "पत्थर", "मछलियाँ"], feedback: "हवा द्वारा उड़ाए गए फूलों के ढेर नदी में तैरते हुए दिखाई दे रहे हैं।"},
+                    {numb: 12, question: "मन्दाकिनी नदी के तट पर कौन से पक्षी मधुर आवाज में गाते हैं?", answer: "चकवा-चकई", options: ["कोयल", "चकवा-चकई", "मोर", "तोता"], feedback: "चकवा-चकई (रथाङ्गनामानः द्विजाः) पक्षी मधुर ध्वनि करते हुए नदी की शोभा बढ़ा रहे हैं।"},
+                    {numb: 13, "question": "कालिदास ने 'रघुवंशकाव्य' में मन्दाकिनी का वर्णन कहाँ किया है?", "answer": "चित्रकूट में", "options": ["अयोध्या में", "लंका में", "चित्रकूट में", "किष्किन्धा में"], "feedback": "कालिदास ने भी अपने ग्रंथ रघुवंश के 13वें सर्ग में चित्रकूट और मन्दाकिनी नदी का वर्णन किया है।"},
+                    {numb: 14, question: "‘जटाजिनधराः’ का क्या अर्थ है?", answer: "जटा और मृगचर्म धारण करने वाले", options: ["साधारण वस्त्र पहनने वाले", "जटा और मृगचर्म धारण करने वाले", "रेशमी वस्त्र पहनने वाले", "सैनिक वेश में"], feedback: "इसका अर्थ है वे तपस्वी जिन्होंने जटाएँ बढ़ा रखी हैं और मृगचर्म (हिरण की खाल) धारण करते हैं।"},
+                    {numb: 15, question: "नदी के जल में किसकी चोटी गिरी हुई सी प्रतीत हो रही है?", answer: "पर्वत की", options: ["वृक्ष की", "पक्षी की", "पर्वत की", "मनुष्य की"], feedback: "राम कहते हैं कि पर्वत की शिखरें (चोटियाँ) हवा से हिलते हुए वृक्षों के कारण ऐसी लग रही हैं मानो पर्वत नृत्य कर रहा हो।"}
+                ]
+            }
+        },
+        "vyaghrapathikKatha": {
+            name: "व्याघ्रपथिककथा",
+            parts: {
+                "part1": [
+                    {numb: 1, question: "‘हितोपदेश’ किसके द्वारा रचित नीतिकथा ग्रंथ है?", answer: "नारायण पंडित", options: ["नारायण पंडित", "विष्णु शर्मा", "पाणिनि", "वेदव्यास"], feedback: "'हितोपदेश' के रचयिता नारायण पंडित हैं, जिन्होंने नीति शिक्षा देने के लिए पशु-पक्षियों की कहानियाँ लिखीं।"},
+                    {numb: 2, question: "‘व्याघ्रपथिककथा’ हितोपदेश के किस खंड से संकलित है?", answer: "मित्रलाभ", options: ["सुहृद्भेद", "मित्रलाभ", "विग्रह", "सन्धि"], feedback: "यह कथा हितोपदेश के प्रथम भाग 'मित्रलाभ' नामक खंड से ली गई है।"},
+                    {numb: 3, question: "‘व्याघ्रपथिककथा’ में बाघ ने किस वस्तु का लालच दिया?", answer: "सोने का कंगन", options: ["रत्न", "मोती", "सोने का कंगन", "चांदी का सिक्का"], feedback: "एक बूढ़े बाघ ने हाथ में सोने का कंगन लेकर एक पथिक को अपनी ओर आकर्षित किया।"},
+                    {numb: 4, question: "‘व्याघ्रपथिककथा’ में लोभ का परिणाम क्या हुआ?", answer: "मृत्यु हुई", options: ["सम्मान मिला", "मृत्यु हुई", "धन प्राप्त हुआ", "यात्रा सफल हुई"], feedback: "सोने के कंगन के लोभ में आकर पथिक बूढ़े बाघ के द्वारा मारकर खा लिया गया।"},
+                    {numb: 5, question: "किसने पथिक को कंगन लेने का सुझाव दिया?", answer: "वृद्ध बाघ", options: ["वृद्ध बाघ", "अन्य पथिक", "साधु", "एक बुजुर्ग महिला"], feedback: "बूढ़े बाघ ने ही पथिक को बुलाकर उसे सोने का कंगन देने का प्रस्ताव रखा।"},
+                    {numb: 6, question: "बाघ ने स्वयं को किस प्रकार पेश किया?", answer: "दानशील वृद्ध", options: ["दानशील वृद्ध", "राजा", "साधारण व्यक्ति", "योद्धा"], feedback: "बाघ ने स्वयं को एक गला-नख-दंत-हीन बूढ़ा और दानशील बताया ताकि पथिक उस पर विश्वास कर ले।"},
+                    {numb: 7, question: "व्याघ्रपथिककथा से क्या शिक्षा मिलती है?", answer: "लोभ नहीं करना चाहिए", options: ["लोभ करना चाहिए", "छल से बचना चाहिए", "मित्र बनाना चाहिए", "लोभ नहीं करना चाहिए"], feedback: "इस कथा का मुख्य संदेश है कि लोभ के चक्कर में पड़कर मनुष्य संकट में पड़ जाता है और अपनी जान भी गँवा सकता है।"},
+                    {numb: 8, question: "बाघ ने किसका उपदेश दिया?", answer: "धर्मशास्त्र का", options: ["धर्मशास्त्र का", "युद्धशास्त्र का", "विज्ञान का", "कला का"], feedback: "पथिक का विश्वास जीतने के लिए बाघ ने धर्मशास्त्र की बातें कीं, जैसे दान देना चाहिए, विशेषकर गरीबों को।"},
+                    {numb: 9, question: "‘व्याघ्रपथिककथा’ में पथिक ने क्या सोचा?", answer: "यह भाग्य से मिलता है", options: ["यह भाग्य से मिलता है", "यह भाग्य से नहीं मिलता", "यह मेहनत से मिलता है", "यह छल से मिलता है"], feedback: "पथिक ने सोचा कि ऐसा अवसर भाग्य से ही मिलता है, लेकिन फिर उसे बाघ पर संदेह भी हुआ।"},
+                    {numb: 10, question: "बाघ ने पथिक को किस जलाशय में स्नान करने के लिए कहा?", answer: "तालाब", options: ["नदी", "तालाब", "कुआं", "झरना"], feedback: "बाघ ने कहा, 'इस तालाब में स्नान करके यह सोने का कंगन ग्रहण करो।'"},
+                    {numb: 11, question: "पथिक कहाँ फँस गया?", answer: "गहरे कीचड़ में", options: ["नदी की धारा में", "गहरे कीचड़ में", "घने जंगल में", "बाघ के पिंजरे में"], feedback: "जैसे ही पथिक तालाब में घुसा, वह गहरे कीचड़ में फँस गया और भागने में असमर्थ हो गया।"},
+                    {numb: 12, question: "पथिक ने किस पर विश्वास किया?", answer: "वृद्ध बाघ पर", options: ["अपने मित्र पर", "वृद्ध बाघ पर", "राजा पर", "स्वयं पर"], feedback: "लोभ के कारण पथिक ने हिंसक जानवर बाघ की बातों पर विश्वास कर लिया।"},
+                    {numb: 13, question: "किसकी मृत्यु से बाघ वंशहीन हो गया था?", answer: "पुत्र और पत्नी दोनों", options: ["पुत्र की", "पत्नी की", "मित्र की", "पुत्र और पत्नी दोनों"], feedback: "बाघ ने अपनी कहानी में बताया कि युवावस्था में दुराचारी होने के कारण उसके पुत्र और पत्नी, दोनों की मृत्यु हो गई और वह वंशहीन हो गया।"},
+                    {numb: 14, question: "किसने बाघ को उपदेश दिया था कि दान-धर्म करो?", answer: "एक धार्मिक व्यक्ति ने", options: ["एक साधु ने", "एक राजा ने", "एक धार्मिक व्यक्ति ने", "अन्य बाघ ने"], feedback: "बाघ ने झूठी कहानी सुनाई कि किसी धार्मिक व्यक्ति ने उसे दान-धर्म करने का उपदेश दिया है।"},
+                    {numb: 15, "question": "‘कङ्कणं तु ददामि’ किसने कहा?", "answer": "बाघ ने", "options": ["पथिक ने", "लेखक ने", "बाघ ने", "राजा ने"], "feedback": "यह वाक्य बाघ ने कहा, जिसका अर्थ है - '(मैं तुम्हें) कंगन देता हूँ।'"}
+                ]
+            }
+        },
+        "karnasyaDanveerta": {
+            name: "कर्णस्य दानवीरता",
+            parts: {
+                "part1": [
+                    {numb: 1, question: "कर्ण का कवच और कुण्डल किसके द्वारा दिए गए थे?", answer: "सूर्य देव", options: ["अर्जुन", "इन्द्र", "सूर्य देव", "कृष्ण"], feedback: "कर्ण सूर्य के पुत्र थे और उन्हें जन्म से ही यह दिव्य कवच और कुण्डल प्राप्त थे।"},
+                    {numb: 2, question: "कर्ण को कवच और कुण्डल का क्या महत्व था?", answer: "यह उसे अजेय बनाता था", options: ["यह उसे अदृश्य बना देता था", "यह उसे अजेय बनाता था", "यह उसे अमर बना देता था", "यह उसे धनी बना देता था"], feedback: "जब तक कर्ण के पास कवच और कुण्डल थे, तब तक उसे कोई भी देवता या असुर मार नहीं सकता था।"},
+                    {numb: 3, question: "इन्द्र ने कर्ण से क्या मांगा?", answer: "कवच और कुण्डल", options: ["भूमि", "उसका सिर", "कवच और कुण्डल", "वज्र"], feedback: "इन्द्र ने ब्राह्मण का वेश धारण कर कर्ण से भिक्षा के रूप में उनका कवच और कुण्डल माँगा।"},
+                    {numb: 4, question: "महाभारत युद्ध में कर्ण किस पक्ष से लड़े थे?", answer: "कौरव पक्ष", options: ["पांडव पक्ष", "कौरव पक्ष", "स्वयं के पक्ष", "निरपेक्ष"], feedback: "कर्ण दुर्योधन के मित्र थे और उन्होंने महाभारत में कौरवों की ओर से युद्ध किया था।"},
+                    {numb: 5, question: "इन्द्र किस वेश में कर्ण से मिले?", answer: "ब्राह्मण वेश", options: ["ब्राह्मण वेश", "सैनिक वेश", "साधु वेश", "कृषक वेश"], feedback: "इन्द्र ने छल करने के लिए एक ब्राह्मण (भिक्षुक) का वेश धारण किया था।"},
+                    {numb: 6, question: "कर्ण को दानवीरता के लिए कौन रोकता है?", answer: "शल्य", options: ["कृष्ण", "दुर्योधन", "शल्य", "सूर्य देव"], feedback: "कर्ण के सारथी शल्यराज ने उन्हें समझाया कि यह इन्द्र का छल है और उन्हें यह दान नहीं देना चाहिए।"},
+                    {numb: 7, question: "‘कर्णस्य दानवीरता’ पाठ किस ग्रंथ से लिया गया है?", answer: "कर्णभार", options: ["महाभारत", "कर्णभार", "रामायण", "रघुवंश"], feedback: "यह पाठ महाकवि भास द्वारा रचित 'कर्णभार' नामक नाटक का एक अंश है।"},
+                    {numb: 8, question: "कर्ण को दानवीर किस गुण के कारण कहा जाता है?", answer: "उदारता", options: ["वीरता", "उदारता", "सत्यवादिता", "बुद्धिमानी"], feedback: "कर्ण अपनी दानवीरता के लिए प्रसिद्ध थे, वे किसी भी याचक को खाली हाथ नहीं लौटाते थे।"},
+                    {numb: 9, question: "इन्द्र ने कर्ण से कवच और कुण्डल क्यों मांगा?", answer: "अर्जुन की सहायता के लिए", options: ["उन्हें खुद की रक्षा के लिए", "अर्जुन की सहायता के लिए", "कर्ण को पराजित करने के लिए", "अपने यश के लिए"], feedback: "इन्द्र अपने पुत्र अर्जुन की महाभारत युद्ध में जीत सुनिश्चित करने के लिए कर्ण को कमजोर करना चाहते थे।"},
+                    {numb: 10, question: "कर्ण ने इन्द्र से पहले किस वस्तु को दान में देने की पेशकश की?", answer: "गोसहस्र", options: ["सोना", "गोसहस्र", "अश्व", "भूमि"], feedback: "कर्ण ने सबसे पहले हजारों गायें (गोसहस्र) देने की पेशकश की, जिसे इन्द्र ने अस्वीकार कर दिया।"},
+                    {numb: 11, question: "‘न दातव्यं, न दातव्यं’ किसने कहा?", answer: "शल्य ने", options: ["इन्द्र ने", "कर्ण ने", "शल्य ने", "कृष्ण ने"], feedback: "शल्यराज ने कर्ण को बार-बार चेतावनी देते हुए कहा - 'मत दीजिए, मत दीजिए।'"},
+                    {numb: 12, question: "कर्ण का राज्य कौनसा था?", answer: "अंगदेश", options: ["हस्तिनापुर", "अंगदेश", "द्वारका", "कुरुक्षेत्र"], feedback: "दुर्योधन ने कर्ण को अंगदेश का राजा बनाया था।"},
+                    {numb: 13, "question": "कर्ण के नाटक के रचनाकार कौन हैं?", "answer": "भास", "options": ["व्यास", "भास", "वाल्मीकि", "कालिदास"], "feedback": "यह प्रश्न दोहराया गया है। 'कर्णभार' नाटक के रचयिता भास हैं।"},
+                    {numb: 14, question: "कर्ण को किसका पुत्र माना जाता है?", answer: "सूर्य देव", options: ["इन्द्र", "सूर्य देव", "चंद्रमा", "अग्नि देव"], feedback: "कर्ण कुंती और सूर्य देव के पुत्र थे।"},
+                    {numb: 15, question: "कर्ण ने कवच और कुण्डल क्यों दान किए?", answer: "अपने वचन की रक्षा के लिए", options: ["डर के कारण", "खुशी से", "अपने वचन की रक्षा के लिए", "लोभ के कारण"], feedback: "कर्ण ने अपने वचन की रक्षा के लिए, जानते हुए भी कि यह छल है, अपना कवच-कुण्डल दान कर दिया।"}
+                ],
+                "part2": [
+                    {numb: 16, question: "इन्द्र किसके पिता थे?", answer: "अर्जुन", options: ["कर्ण", "अर्जुन", "भीम", "युधिष्ठिर"], feedback: "अर्जुन को इन्द्र का पुत्र माना जाता है।"},
+                    {numb: 17, question: "कर्ण ने इन्द्र से पहले किस चीज का दान देने की पेशकश नहीं की?", answer: "अपना सिर", options: ["अश्व", "पृथ्वी", "सोना", "अपना सिर"], feedback: "जब इन्द्र ने सब कुछ मना कर दिया, तब कर्ण ने अपना सिर भी देने की पेशकश की।"},
+                    {numb: 18, question: "कर्ण का कवच और कुण्डल किससे अभेद्य था?", answer: "उपरोक्त सभी से", options: ["देवताओं से", "असुरों से", "मानवों से", "उपरोक्त सभी से"], feedback: "यह कवच और कुण्डल उसे सभी प्रकार के अस्त्र-शस्त्रों से अभेद्य बनाते थे।"},
+                    {numb: 19, question: "समय के साथ क्या नष्ट हो जाता है?", answer: "शिक्षा", options: ["दान", "यज्ञ", "शिक्षा", "यश"], feedback: "कर्ण कहते हैं - 'शिक्षा समय के साथ क्षीण हो जाती है, वृक्ष गिर जाते हैं, जल सूख जाता है, लेकिन दिया गया दान और यज्ञ हमेशा स्थिर रहते हैं।'"},
+                    {numb: 20, question: "कर्ण ने बिना किसी हिचकिचाहट के क्या दान कर दिया?", answer: "कवच और कुण्डल", options: ["राज्य", "धन", "कवच और कुण्डल", "अस्त्र"], feedback: "अनेक प्रस्तावों के बाद, अंत में कर्ण ने बिना किसी संकोच के अपना कवच और कुण्डल दान कर दिया।"},
+                    {numb: 21, question: "कर्ण किस देश के राजा थे?", answer: "अंगदेश", options: ["मगध", "कलिंग", "अंगदेश", "अवन्ति"], feedback: "यह प्रश्न दोहराया गया है। कर्ण अंगदेश के राजा थे।"},
+                    {numb: 22, question: "इंद्र ने कर्ण से छल क्यों किया?", answer: "अर्जुन की रक्षा के लिए", options: ["पांडवों को हराने के लिए", "कौरवों की मदद के लिए", "अर्जुन की रक्षा के लिए", "अपना राज्य बचाने के लिए"], feedback: "इंद्र ने अपने पुत्र अर्जुन की रक्षा के लिए ही कर्ण के साथ छल किया था।"},
+                    {numb: 23, question: "कर्ण की दानवीरता से हमें क्या सीखने को मिलता है?", answer: "दान मनुष्य का सर्वश्रेष्ठ गुण है", options: ["दान मनुष्य का सर्वश्रेष्ठ गुण है", "दान कभी नष्ट नहीं होता", "दान करने से यश प्राप्त होता है", "उपरोक्त सभी"], feedback: "कर्ण का चरित्र हमें सिखाता है कि दान एक महान गुण है और दिया गया दान हमेशा अमर रहता है।"},
+                    {numb: 24, question: "कर्ण का कवच और कुण्डल किसके लिए खतरा था?", answer: "अर्जुन", options: ["कृष्ण", "अर्जुन", "भीम", "युधिष्ठिर"], feedback: "कर्ण का अभेद्य कवच-कुण्डल युद्ध में अर्जुन के लिए सबसे बड़ा खतरा था।"},
+                    {numb: 25, question: "इन्द्र ने कर्ण से कवच और कुण्डल प्राप्त करने के लिए क्या किया?", answer: "उसने उन्हें छलपूर्वक मांगा", options: ["उसने उन्हें धमकी दी", "उसने उन्हें प्रलोभन दिया", "उसने उन्हें छलपूर्वक मांगा", "उसने उन्हें युद्ध में हराया"], feedback: "इंद्र ने ब्राह्मण का वेश धरकर छल से कर्ण से उनका रक्षा कवच माँगा।"},
+                    {numb: 26, "question": "कर्ण की कौनसी विशेषता उन्हें महान बनाती है?", "answer": "दानवीरता", "options": ["वीरता", "बुद्धिमानी", "दानवीरता", "सत्यवादिता"], "feedback": "यद्यपि कर्ण वीर और बुद्धिमान थे, लेकिन उनकी दानवीरता की मिसाल आज भी दी जाती है।"},
+                    {numb: 27, question: "दान देने के बाद कर्ण को क्या मिला?", answer: "यश", options: ["दीर्घायु", "यश", "अमरता", "संपत्ति"], feedback: "इंद्र ने कर्ण को दीर्घायु का आशीर्वाद नहीं दिया, क्योंकि उनकी मृत्यु निश्चित थी, लेकिन उनका यश आज भी अमर है।"},
+                    {numb: 28, "question": "कर्ण ने इन्द्र से कवच और कुण्डल किस रूप में दिए?", "answer": "खुशी से", "options": ["खुशी से", "मजबूरी से", "डर से", "लोभ से"], "feedback": "यह जानते हुए भी कि यह छल है, कर्ण ने प्रसन्नतापूर्वक अपना दान का वचन निभाया।"},
+                    {numb: 29, "question": "कर्ण की किस विशेषता ने उसे अमर बना दिया?", "answer": "दानवीरता", "options": ["वीरता", "दानवीरता", "सत्यवादिता", "बुद्धिमानी"], "feedback": "उनकी दानवीरता की कथा आज भी उन्हें लोगों के दिलों में अमर बनाए हुए है।"},
+                    {numb: 30, question: "‘कर्णभार’ किस प्रकार का ग्रंथ है?", answer: "नाटक", options: ["महाकाव्य", "चम्पूकाव्य", "नाटक", "पुराण"], feedback: "कर्णभार एक एकांकी नाटक है।"}
+                ]
+            }
+        },
+        "vishwaShanti": {
+            name: "विश्वशान्तिः",
+            parts: {
+                "part1": [
+                    {numb: 1, question: "‘विश्वशान्तिः’ पाठ का मुख्य उद्देश्य क्या है?", answer: "शांति और सहिष्णुता की शिक्षा", options: ["औद्योगिक वृद्धि", "अशांति का चित्रण", "शांति और सहिष्णुता की शिक्षा", "सीमा का विस्तार"], feedback: "इस पाठ का उद्देश्य विश्व में व्याप्त अशांति के कारणों और शांति स्थापना के उपायों पर प्रकाश डालना है।"},
+                    {numb: 2, question: "राष्ट्रसंघ (संयुक्त राष्ट्र संघ) की स्थापना का उद्देश्य क्या है?", answer: "देशों के बीच विवाद रोकना", options: ["व्यापार को बढ़ावा देना", "देशों के बीच विवाद रोकना", "शांति सम्मेलन का आयोजन करना", "आंतरिक कलह को समाप्त करना"], feedback: "दो विश्वयुद्धों के बाद, देशों के बीच विवादों को रोकने और शांति स्थापित करने के लिए संयुक्त राष्ट्र संघ जैसी संस्थाओं की स्थापना हुई।"},
+                    {numb: 3, question: "अशांति का मूल कारण क्या है?", answer: "द्वेष और असहिष्णुता", options: ["शत्रुता और मित्रता", "अशिक्षा", "द्वेष और असहिष्णुता", "राजनीतिक सहयोग"], feedback: "पाठ के अनुसार, अशांति के दो मूल कारण हैं - द्वेष (ईर्ष्या) और असहिष्णुता (दूसरे की उन्नति को सहन न कर पाना)।"},
+                    {numb: 4, question: "उदार-हृदय वाले पुरुषों के लिए यह संपूर्ण पृथ्वी क्या है?", answer: "एक परिवार", options: ["एक बड़ा व्यवसाय", "एक प्रतियोगिता", "एक परिवार", "एक प्रतिद्वंद्वी"], feedback: "'अयं निजः परो वेति गणना लघुचेतसाम्। उदारचरितानां तु वसुधैव कुटुम्बकम्॥' अर्थात उदार चरित्र वालों के लिए पूरी पृथ्वी ही परिवार है।"},
+                    {numb: 5, question: "आज विश्व के अधिकांश देशों में क्या दिखाई देता है?", answer: "अशांति", options: ["शांति", "समृद्धि", "अशांति", "मित्रता"], feedback: "पाठ के अनुसार, आजकल विश्व के लगभग सभी देशों में अशांति का वातावरण दिखाई देता है।"},
+                    {numb: 6, question: "अशांति से मानवता का क्या हो रहा है?", answer: "विनाश", options: ["विकास", "उत्थान", "विनाश", "कल्याण"], feedback: "अशांति के कारण मानवता के विनाश का संकट मंडरा रहा है।"},
+                    {numb: 7, "question": "एक देश दूसरे देश की उन्नति देखकर क्या करता है?", "answer": "द्वेष करता है", "options": ["सहायता करता है", "प्रशंसा करता है", "द्वेष करता है", "व्यापार करता है"], "feedback": "एक देश दूसरे की उन्नति देखकर जलता (द्वेष करता) है और उसकी उन्नति को नष्ट करने का प्रयास करता है, जो असहिष्णुता है।"},
+                    {numb: 8, question: "द्वेष और असहिष्णुता किसे जन्म देते हैं?", answer: "अशांति को", options: ["शांति को", "मित्रता को", "अशांति को", "सहयोग को"], feedback: "ये दोनों दोष ही अशांति के मूल कारण हैं।"},
+                    {numb: 9, question: "शत्रुता को कौन बढ़ाता है?", answer: "स्वार्थ", options: ["परोपकार", "मित्रता", "स्वार्थ", "शांति"], feedback: "स्वार्थ की भावना शत्रुता को और भी अधिक बढ़ाती है।"},
+                    {numb: 10, question: "‘विश्वशान्तिः’ पाठ में किस समस्या पर ध्यान केन्द्रित किया गया है?", answer: "अशांति और उसके समाधान", options: ["परमाणु युद्ध", "धार्मिक विवाद", "अशांति और उसके समाधान", "सीमा विवाद"], feedback: "यह पाठ विश्व में अशांति के कारणों और उनके समाधानों पर विचार करता है।"},
+                    {numb: 11, question: "अशांति के निवारण के लिए क्या आवश्यक है?", answer: "करुणा और मित्रता", options: ["अधिक हथियार", "आर्थिक सहायता", "करुणा और मित्रता", "युद्ध की तैयारी"], feedback: "शत्रुता को केवल करुणा और मित्रता की भावना से ही समाप्त किया जा सकता है।"},
+                    {numb: 12, question: "भगवान बुद्ध ने वैर (शत्रुता) को समाप्त करने का क्या उपाय बताया था?", answer: "अ-वैर और करुणा से", options: ["युद्ध से", "समझौते से", "अ-वैर और करुणा से", "दंड से"], feedback: "भगवान बुद्ध ने कहा था कि वैर से वैर कभी शांत नहीं होता, बल्कि अवैर (मित्रता) और करुणा से ही शांत होता है।"},
+                    {numb: 13, question: "क्रिया के बिना क्या भार के समान है?", answer: "ज्ञान", options: ["धन", "शक्ति", "ज्ञान", "धर्म"], feedback: "यदि ज्ञान का आचरण न किया जाए, तो वह केवल एक भार के समान है। शांति के लिए ज्ञान को व्यवहार में लाना आवश्यक है।"},
+                    {numb: 14, question: "परोपकार से क्या होता है?", answer: "शांति", options: ["अशांति", "द्वेष", "शांति", "युद्ध"], feedback: "यदि एक देश दूसरे संकटग्रस्त देश की सहायता करता है, तो यह परोपकार की भावना शांति स्थापित करती है।"},
+                    {numb: 15, "question": "अनेकों राज्यों में परस्पर क्या चल रहा है?", "answer": "शीतयुद्ध", "options": ["व्यापार", "मित्रता", "शीतयुद्ध", "सांस्कृतिक आदान-प्रदान"], "feedback": "आजकल कई राज्यों में आपस में शीतयुद्ध (तनावपूर्ण संबंध) चल रहा है।"}
+                ]
+            }
+        },
+        "shastrakara": {
+            name: "शास्त्रकाराः",
+            parts: {
+                "part1": [
+                    {numb: 1, question: "शास्त्र मनुष्यों को क्या सिखाता है?", answer: "कर्तव्य-अकर्तव्य", options: ["व्यापार", "कर्तव्य-अकर्तव्य", "राजनीति", "कला"], feedback: "शास्त्र मनुष्य को कर्तव्य और अकर्तव्य के विषयों की शिक्षा देता है, अर्थात क्या करना चाहिए और क्या नहीं।"},
+                    {numb: 2, question: "वेदांगों की संख्या कितनी है?", answer: "छह", options: ["चार", "पाँच", "छह", "सात"], feedback: "वेद के छह अंग हैं - शिक्षा, कल्प, व्याकरण, निरुक्त, छन्द और ज्योतिष।"},
+                    {numb: 3, question: "शिक्षा शास्त्र का प्रमुख ग्रंथ कौन सा है?", answer: "पाणिनीय शिक्षा", options: ["सुश्रुतसंहिता", "पाणिनीय शिक्षा", "बृहत्संहिता", "चरकसंहिता"], feedback: "पाणिनी द्वारा रचित 'पाणिनीय शिक्षा' शिक्षा नामक वेदांग का एक प्रसिद्ध ग्रंथ है।"},
+                    {numb: 4, question: "शास्त्र की परिभाषा क्या है?", answer: "ज्ञान का शासक", options: ["एक कला का रूप", "ज्ञान का शासक", "खेलकूद की विधि", "धार्मिक अनुष्ठान"], feedback: "शास्त्र का अर्थ है ज्ञान का शासक या अनुशासक, जो हमें सही मार्ग दिखाता है।"},
+                    {numb: 5, question: "वेदांगों में कौन-कौन से शास्त्र शामिल हैं?", answer: "शिक्षा, कल्प, व्याकरण", options: ["उपनिषद, शिल्प, आयुर्वेद", "शिक्षा, कल्प, व्याकरण", "भौतिकी, रसायन, गणित", "संगीत, नृत्य, वास्तु"], feedback: "शिक्षा, कल्प, व्याकरण, निरुक्त, छन्द और ज्योतिष, ये छह वेदांग हैं।"},
+                    {numb: 6, question: "भारतीय दर्शनशास्त्र के प्रवर्तक कौन हैं?", answer: "कपिल, पतंजलि, गौतम", options: ["पाणिनी, यास्क, पिंगल", "कपिल, पतंजलि, गौतम", "सुश्रुत, चरक, वराहमिहिर", "आचार्य, श्रीधर, बौधायन"], feedback: "सांख्य दर्शन के प्रवर्तक कपिल, योग के पतंजलि और न्याय के गौतम हैं।"},
+                    {numb: 7, question: "ज्योतिषशास्त्र के अन्तर्गत कौन-कौन से विषय आते हैं?", answer: "खगोल विज्ञान, गणित", options: ["खगोल विज्ञान, गणित", "रसायन विज्ञान, भौतिक विज्ञान", "संगीत, नृत्य", "इतिहास, भूगोल"], feedback: "ज्योतिष एक विशाल शास्त्र है जिसमें खगोल विज्ञान, गणित और फलित ज्योतिष जैसे विषय शामिल हैं।"},
+                    {numb: 8, question: "वेदांगों में कौन सा शास्त्र कर्मकाण्ड ग्रंथ है?", answer: "कल्प", options: ["शिक्षा", "कल्प", "व्याकरण", "निरुक्त"], feedback: "कल्प नामक वेदांग में कर्मकांड (यज्ञ आदि) करने की विधि बताई गई है, जो सूत्र के रूप में है।"},
+                    {numb: 9, question: "दर्शनशास्त्र के प्रवर्तक कौन नहीं हैं?", answer: "पाणिनी", options: ["कपिल", "पतंजलि", "गौतम", "पाणिनी"], feedback: "पाणिनी व्याकरण शास्त्र के प्रवर्तक हैं, न कि दर्शनशास्त्र के।"},
+                    {numb: 10, question: "वेदांगों में ‘निरुक्त’ का प्रमुख कार्य क्या है?", answer: "वेदार्थ बोध", options: ["कर्मकाण्ड", "उच्चारण", "वेदार्थ बोध", "गणित"], feedback: "निरुक्त का कार्य वेदों के कठिन शब्दों के अर्थ का बोध कराना है। इसके रचयिता यास्क हैं।"},
+                    {numb: 11, question: "‘पाणिनीय शिक्षा’ किस प्रकार का ग्रंथ है?", answer: "उच्चारण विज्ञान", options: ["विज्ञान", "शास्त्र", "गणित", "उच्चारण विज्ञान"], feedback: "शिक्षा नामक वेदांग में वर्णों के उच्चारण की प्रक्रिया का ज्ञान दिया जाता है।"},
+                    {numb: 12, question: "‘वृहत्संहिता’ किस शास्त्र से संबंधित है?", answer: "ज्योतिष", options: ["गणित", "ज्योतिष", "चिकित्सा", "शिल्प"], feedback: "वराहमिहिर द्वारा रचित बृहत्संहिता ज्योतिष का एक विशाल ग्रंथ है।"},
+                    {numb: 13, question: "कौन सा शास्त्र वेदांगों का हिस्सा नहीं है?", answer: "दर्शन", options: ["शिक्षा", "कल्प", "दर्शन", "व्याकरण"], feedback: "दर्शनशास्त्र एक अलग शाखा है, यह वेदांगों में शामिल नहीं है।"},
+                    {numb: 14, question: "‘आयुर्वेदशास्त्र’ में कौन से ग्रंथ प्रमुख हैं?", answer: "सुश्रुतसंहिता और चरकसंहिता", options: ["सुश्रुतसंहिता और चरकसंहिता", "बृहत्संहिता और पाणिनीय शिक्षा", "गणित और खगोल विज्ञान", "व्याकरण और निरुक्त"], feedback: "चरकसंहिता और सुश्रुतसंहिता आयुर्वेद के सबसे प्रसिद्ध और प्रामाणिक ग्रंथ हैं।"},
+                    {numb: 15, question: "भारतीय शास्त्रों में ‘व्याकरण’ के प्रवर्तक कौन हैं?", answer: "पाणिनी", options: ["गौतम", "कपिल", "पाणिनी", "जैमिनि"], feedback: "पाणिनी को संस्कृत व्याकरण का सबसे बड़ा आचार्य माना जाता है। उनकी रचना 'अष्टाध्यायी' प्रसिद्ध है।"}
+                ],
+                "part2": [
+                    {numb: 16, question: "‘मीमांसा’ दर्शन के प्रवर्तक कौन हैं?", answer: "जैमिनि", options: ["पतंजलि", "कपिल", "जैमिनि", "बादरायण"], feedback: "जैमिनि ने मीमांसा दर्शन की रचना की।"},
+                    {numb: 17, question: "‘वेदांत’ दर्शन किसने रचा?", answer: "बादरायण", options: ["कपिल", "पतंजलि", "गौतम", "बादरायण"], feedback: "बादरायण ने 'ब्रह्मसूत्र' नामक ग्रंथ की रचना की, जो वेदान्त दर्शन का आधार है।"},
+                    {numb: 18, question: "किस शास्त्र में ‘वेदार्थ’ बोध होता है?", answer: "निरुक्त", options: ["शिक्षा", "निरुक्त", "छन्द", "ज्योतिष"], feedback: "यह प्रश्न दोहराया गया है। निरुक्त वेदों के अर्थ का बोध कराता है।"},
+                    {numb: 19, question: "भारतीय शास्त्रों में ‘सांख्य’ दर्शन के प्रवर्तक कौन हैं?", answer: "कपिल", options: ["पतंजलि", "कपिल", "गौतम", "कणाद"], feedback: "सांख्य दर्शन के प्रवर्तक महर्षि कपिल हैं।"},
+                    {numb: 20, "question": "वैशेषिक दर्शन के प्रवर्तक कौन हैं?", "answer": "कणाद", "options": ["जैमिनि", "कणाद", "कपिल", "पतंजलि"], "feedback": "महर्षि कणाद ने वैशेषिक दर्शन का प्रवर्तन किया।"},
+                    {numb: 21, question: "आर्यभट्ट की रचना कौन सी है?", answer: "आर्यभटीयम्", options: ["बृहत्संहिता", "आर्यभटीयम्", "चरकसंहिता", "अष्टाध्यायी"], feedback: "महान गणितज्ञ और खगोलशास्त्री आर्यभट्ट ने 'आर्यभटीयम्' नामक ग्रंथ की रचना की।"},
+                    {numb: 22, question: "छन्द शास्त्र के रचयिता कौन हैं?", answer: "पिंगल", options: ["यास्क", "पिंगल", "पाणिनी", "गौतम"], feedback: "पिंगल द्वारा रचित 'छन्दःशास्त्र' छन्द नामक वेदांग का प्रमुख ग्रंथ है।"},
+                    {numb: 23, "question": "कक्षा में कौन प्रवेश करते हैं?", "answer": "शिक्षक", "options": ["प्रधानाचार्य", "छात्र", "शिक्षक", "अभिभावक"], "feedback": "पाठ की शुरुआत कक्षा में शिक्षक के प्रवेश से होती है।"},
+                    {numb: 24, question: "छात्र किसका अभिवादन करते हैं?", answer: "शिक्षक का", options: ["मित्रों का", "पुस्तकों का", "शिक्षक का", "प्रधानाचार्य का"], feedback: "छात्र अपनी सीटों से उठकर शिक्षक का अभिवादन करते हैं।"},
+                    {numb: 25, question: "भारतवर्ष में किसकी महान परम्परा सुनी जाती है?", answer: "शास्त्रों की", options: ["कला की", "संगीत की", "शास्त्रों की", "युद्ध की"], feedback: "भारतवर्ष में शास्त्रों की एक बहुत लंबी और महान परम्परा रही है।"},
+                    {numb: 26, question: "आजकल अध्ययन का विषय क्या कहा जाता है?", answer: "अनुशासन", options: ["शास्त्र", "कला", "विज्ञान", "अनुशासन"], feedback: "पश्चिमी देशों में जिसे 'अनुशासन' (Discipline) कहते हैं, वही पहले 'शास्त्र' कहलाता था।"},
+                    {numb: 27, question: "किसका व्याकरण प्रसिद्ध है?", answer: "पाणिनी का", options: ["यास्क का", "पिंगल का", "पाणिनी का", "गौतम का"], feedback: "पाणिनी द्वारा रचित व्याकरण आज भी विश्वभर में प्रसिद्ध है।"},
+                    {numb: 28, question: "कृषि-विज्ञान किसने लिखा है?", answer: "पराशर", options: ["वराहमिहिर", "पराशर", "आर्यभट्ट", "कणाद"], feedback: "पराशर द्वारा कृषि-विज्ञान की रचना की गई।"},
+                    {numb: 29, "question": "न्याय दर्शन के प्रवर्तक कौन हैं?", "answer": "गौतम", "options": ["कपिल", "पतंजलि", "जैमिनि", "गौतम"], "feedback": "महर्षि गौतम ने न्याय दर्शन का प्रवर्तन किया।"},
+                    {numb: 30, "question": "योग दर्शन के प्रवर्तक कौन हैं?", "answer": "पतंजलि", "options": ["कणाद", "कपिल", "पतंजलि", "गौतम"], "feedback": "महर्षि पतंजलि योग दर्शन के प्रवर्तक हैं।"}
+                ]
+            }
+        }
+    };
+    
+    initializeUI();
+});
+</script>
+
+</body>
+</html>
+<!-- कोड यहाँ समाप्त होता है -->
